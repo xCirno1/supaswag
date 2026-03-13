@@ -1,8 +1,9 @@
-import { analyzePatientDiet } from '@/lib/ai-engine';
-import { patients } from '@/lib/mock-db';
+import { getMealPlans } from '@/lib/api';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 
-export default function MealPlans() {
+export default async function MealPlans() {
+  const mealPlans = await getMealPlans();
+
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
@@ -118,13 +119,7 @@ export default function MealPlans() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <p className="room-tag" style={{ marginBottom: '0.5rem' }}>Today · Auto-generated</p>
-            <h1 style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: '2.4rem',
-              color: '#1c1917',
-              lineHeight: 1.1,
-              letterSpacing: '-0.01em',
-            }}>
+            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2.4rem', color: '#1c1917', lineHeight: 1.1, letterSpacing: '-0.01em' }}>
               AI Meal Plans
             </h1>
           </div>
@@ -139,7 +134,6 @@ export default function MealPlans() {
         <div className="page-rule" style={{ marginTop: '1.5rem' }} />
       </div>
 
-      {/* Column headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '10rem 1fr auto', gap: '2rem', paddingBottom: '0.5rem' }}>
         <span className="column-head">Patient</span>
         <span className="column-head">Dinner Assignment</span>
@@ -147,73 +141,45 @@ export default function MealPlans() {
       </div>
       <div className="col-rule" />
 
-      {/* Rows */}
-      {patients.map(patient => {
-        const analysis = analyzePatientDiet(patient.id);
-        const proteins = analysis.safeFoods.filter(f =>
-          f.name.includes('Salmon') || f.name.includes('Cheese') || f.name.includes('Peanut')
-        );
-        const sides = analysis.safeFoods.filter(f =>
-          f.name.includes('Rice') || f.name.includes('Spinach') || f.name.includes('Bread')
-        );
-
-        const protein = proteins[0]?.name || 'Standard Protein';
-        const side = sides[0]?.name || 'Standard Side';
-        const flags = analysis.flaggedFoods;
-
-        return (
-          <div key={patient.id} className="meal-row">
-            {/* Patient */}
-            <div>
-              <div className="patient-name">{patient.name}</div>
-              <div className="room-tag">Room {patient.room}</div>
-            </div>
-
-            {/* Meal */}
-            <div>
-              <div className="meal-label">Dinner</div>
-              <div className="meal-text">{protein}</div>
-              <div style={{ fontSize: '0.8rem', color: '#a8a29e', marginTop: '0.2rem' }}>
-                with {side}
-              </div>
-
-              {flags.length > 0 && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  {flags.map((f, i) => (
-                    <span key={i} className="flag-pill">
-                      <AlertTriangle style={{ width: '0.6rem', height: '0.6rem' }} />
-                      Avoid: {f.item.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Alert count */}
-            <div style={{ textAlign: 'right', paddingTop: '0.15rem' }}>
-              {flags.length > 0 ? (
-                <span style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: '1.3rem',
-                  color: '#b45309',
-                }}>
-                  {flags.length}
-                </span>
-              ) : (
-                <span style={{
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: '#10b981',
-                  fontWeight: 500,
-                }}>
-                  Clear
-                </span>
-              )}
-            </div>
+      {mealPlans.map(({ patient, protein, side, flags }) => (
+        <div key={patient.id} className="meal-row">
+          <div>
+            <div className="patient-name">{patient.name}</div>
+            <div className="room-tag">Room {patient.room}</div>
           </div>
-        );
-      })}
+
+          <div>
+            <div className="meal-label">Dinner</div>
+            <div className="meal-text">{protein}</div>
+            <div style={{ fontSize: '0.8rem', color: '#a8a29e', marginTop: '0.2rem' }}>
+              with {side}
+            </div>
+
+            {flags.length > 0 && (
+              <div style={{ marginTop: '0.75rem' }}>
+                {flags.map((f, i) => (
+                  <span key={i} className="flag-pill">
+                    <AlertTriangle style={{ width: '0.6rem', height: '0.6rem' }} />
+                    Avoid: {f.item.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign: 'right', paddingTop: '0.15rem' }}>
+            {flags.length > 0 ? (
+              <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.3rem', color: '#b45309' }}>
+                {flags.length}
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#10b981', fontWeight: 500 }}>
+                Clear
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

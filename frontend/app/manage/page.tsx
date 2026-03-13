@@ -1,8 +1,13 @@
-import { patients, inventory } from '@/lib/mock-db';
+import { getPatients, getInventory } from '@/lib/api';
 import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction } from './actions';
 import { Trash2, Plus, Save } from 'lucide-react';
 
-export default function ManagePage() {
+export default async function ManagePage() {
+  const [patients, inventory] = await Promise.all([
+    getPatients(),
+    getInventory()
+  ]);
+
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
       <style>{`

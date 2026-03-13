@@ -1,9 +1,9 @@
-import { analyzePatientDiet } from '@/lib/ai-engine';
+import { getPatientAnalysis } from '@/lib/api';
 import { AlertTriangle, Sparkles, Check, Pill, ShieldBan } from 'lucide-react';
 
 export default async function PatientDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const analysis = analyzePatientDiet(id);
+  const analysis = await getPatientAnalysis(id);
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">

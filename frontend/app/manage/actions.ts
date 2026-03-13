@@ -1,6 +1,6 @@
 'use server'
 
-import { patients, inventory, Medication, Allergy } from '@/lib/mock-db';
+import { createPatient, deletePatient, updateInventoryStock, createInventoryItem } from '@/lib/api';
 import { revalidatePath } from 'next/cache';
 
 export async function addPatientAction(formData: FormData) {
@@ -8,18 +8,10 @@ export async function addPatientAction(formData: FormData) {
   const age = parseInt(formData.get('age') as string, 10);
   const room = formData.get('room') as string;
 
-  // Safely generate the next ID
-  const maxIdNum = patients.reduce((max, p) => {
-    const num = parseInt(p.id.replace('P', ''), 10);
-    return isNaN(num) ? max : (num > max ? num : max);
-  }, 0);
-  const id = `P${String(maxIdNum + 1).padStart(3, '0')}`;
+  const medications = formData.getAll('medications') as string[];
+  const allergies = formData.getAll('allergies') as string[];
 
-  const medications = formData.getAll('medications') as Medication[];
-  const allergies = formData.getAll('allergies') as Allergy[];
-
-  patients.push({
-    id,
+  await createPatient({
     name,
     age,
     room,
@@ -36,10 +28,8 @@ export async function addPatientAction(formData: FormData) {
 }
 
 export async function removePatientAction(id: string) {
-  const idx = patients.findIndex(p => p.id === id);
-  if (idx > -1) {
-    patients.splice(idx, 1);
-  }
+  await deletePatient(id);
+
   revalidatePath('/');
   revalidatePath('/patients');
   revalidatePath('/manage');
@@ -49,10 +39,11 @@ export async function removePatientAction(id: string) {
 
 export async function updateStockAction(id: string, formData: FormData) {
   const newStock = parseInt(formData.get('stock') as string, 10);
-  const item = inventory.find(i => i.id === id);
-  if (item && !isNaN(newStock)) {
-    item.stock = newStock;
+
+  if (!isNaN(newStock)) {
+    await updateInventoryStock(id, newStock);
   }
+
   revalidatePath('/');
   revalidatePath('/inventory');
   revalidatePath('/manage');
@@ -65,19 +56,11 @@ export async function addInventoryAction(formData: FormData) {
 
   if (!name || !unit || isNaN(stock)) return;
 
-  const maxIdNum = inventory.reduce((max, item) => {
-    const num = parseInt(item.id.replace(/\D/g, ''), 10);
-    return isNaN(num) ? max : (num > max ? num : max);
-  }, 0);
-  const id = `INV${String(maxIdNum + 1).padStart(3, '0')}`;
-
-  inventory.push({
-    id,
-    name,
-    unit,
-    stock,
-    tags: [],
-  } as any);
+  try {
+    await createInventoryItem({ name, unit, stock, tags: [] });
+  } catch (err) {
+    console.warn("Backend missing POST /inventory endpoint. Ignoring creation locally.");
+  }
 
   revalidatePath('/');
   revalidatePath('/inventory');

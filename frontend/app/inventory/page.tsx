@@ -1,8 +1,8 @@
-import { calculateBulkNeeds } from '@/lib/ai-engine';
+import { getInventoryNeeds } from '@/lib/api';
 import { ShoppingCart, ArrowUpRight } from 'lucide-react';
 
-export default function InventoryPage() {
-  const inventoryData = calculateBulkNeeds();
+export default async function InventoryPage() {
+  const inventoryData = await getInventoryNeeds();
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">

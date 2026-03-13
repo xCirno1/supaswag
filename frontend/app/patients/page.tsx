@@ -1,8 +1,10 @@
 import Link from 'next/link';
-import { patients } from '@/lib/mock-db';
+import { getPatients } from '@/lib/api';
 import { ArrowUpRight } from 'lucide-react';
 
-export default function PatientsPage() {
+export default async function PatientsPage() {
+  const patients = await getPatients();
+
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`

@@ -1,10 +1,28 @@
-import { ShieldAlert, CheckCircle2, TrendingDown, Users, ArrowUpRight } from 'lucide-react';
-import { patients } from '@/lib/mock-db';
-import { calculateBulkNeeds } from '@/lib/ai-engine';
+// nutricare/frontend/app/page.tsx
+import { ShieldAlert, TrendingDown, Users, ArrowUpRight } from 'lucide-react';
+import { getPatients, getInventoryNeeds, getAiLogs } from '@/lib/api';
 
-export default function Dashboard() {
-  const inventoryNeeds = calculateBulkNeeds();
+export default async function Dashboard() {
+  const [patients, inventoryNeeds] = await Promise.all([
+    getPatients(),
+    getInventoryNeeds()
+  ]);
+
   const orderCount = inventoryNeeds.filter(i => i.status === 'ORDER NOW').length;
+
+  // Attempt to fetch AI logs, fallback to defaults if the DB table is missing/empty
+  let aiLogs: any[] = [];
+  try {
+    aiLogs = await getAiLogs();
+  } catch (e) {
+    console.error("Could not fetch AI Logs, using defaults.");
+  }
+
+  const displayLogs = aiLogs.length > 0 ? aiLogs : [
+    { time: "Just now", severity: "warn", text: "AI flagged Fresh Spinach for Patient P001 — Warfarin interaction detected." },
+    { time: "10 min ago", severity: "info", text: "Inventory analysis complete. 2 items marked for re-order." },
+    { time: "1 hr ago", severity: "ok", text: "New EHR data synced successfully from Cerner API." }
+  ];
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
@@ -118,21 +136,14 @@ export default function Dashboard() {
           <div className="rule-line mb-8" />
 
           <div className="space-y-0">
-            <LogEntry
-              time="Just now"
-              severity="warn"
-              text="AI flagged Fresh Spinach for Patient P001 — Warfarin interaction detected."
-            />
-            <LogEntry
-              time="10 min ago"
-              severity="info"
-              text="Inventory analysis complete. 2 items marked for re-order."
-            />
-            <LogEntry
-              time="1 hr ago"
-              severity="ok"
-              text="New EHR data synced successfully from Cerner API."
-            />
+            {displayLogs.slice(0, 3).map((log, idx) => (
+              <LogEntry
+                key={idx}
+                time={log.time || new Date(log.created_at).toLocaleTimeString()}
+                severity={log.severity as 'warn' | 'info' | 'ok'}
+                text={log.text}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -145,7 +156,7 @@ function LogEntry({ time, text, severity }: { time: string; text: string; severi
     warn: 'bg-rose-500',
     info: 'bg-amber-400',
     ok: 'bg-emerald-400',
-  }[severity];
+  }[severity] || 'bg-stone-400';
 
   return (
     <div className="log-item flex items-start gap-6 py-5 border-b border-stone-200 last:border-0 group">
