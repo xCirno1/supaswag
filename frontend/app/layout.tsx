@@ -1,5 +1,6 @@
+// nutricare/frontend/app/layout.tsx
 import './globals.css';
-import { Activity, Users, Utensils, Box, Sparkles } from 'lucide-react';
+import { Activity, Users, Utensils, Box, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export const metadata = { title: 'NutriCare AI', description: 'Healthcare Food Planning' };
@@ -123,6 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NavItem href="/patients" icon={<Users />} label="Patients" />
             <NavItem href="/meal-plans" icon={<Utensils />} label="Meal Plans" />
             <NavItem href="/inventory" icon={<Box />} label="Inventory" />
+            <NavItem href="/manage" icon={<Settings />} label="Manage" />
           </nav>
 
           {/* AI Status */}
