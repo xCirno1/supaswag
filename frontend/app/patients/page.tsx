@@ -1,3 +1,4 @@
+"use client"
 import Link from 'next/link';
 import { getPatients, Patient } from '@/lib/api';
 import { ArrowUpRight } from 'lucide-react';

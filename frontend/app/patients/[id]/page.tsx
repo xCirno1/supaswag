@@ -1,3 +1,4 @@
+"use client"
 import { getPatientAnalysis, PatientAnalysis } from '@/lib/api';
 import { AlertTriangle, Sparkles, Check, Pill, ShieldBan } from 'lucide-react';
 

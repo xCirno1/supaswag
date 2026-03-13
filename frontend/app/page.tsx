@@ -1,4 +1,4 @@
-// nutricare/frontend/app/page.tsx
+"use client"
 import { ShieldAlert, TrendingDown, Users, ArrowUpRight } from 'lucide-react';
 import { getPatients, getInventoryNeeds, getAiLogs, Patient, InventoryNeed } from '@/lib/api';
 

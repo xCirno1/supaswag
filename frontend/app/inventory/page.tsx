@@ -1,3 +1,4 @@
+"use client"
 import { getInventoryNeeds, InventoryNeed } from '@/lib/api';
 import { ShoppingCart, ArrowUpRight } from 'lucide-react';
 

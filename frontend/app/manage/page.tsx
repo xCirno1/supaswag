@@ -1,3 +1,4 @@
+"use client"
 import { getPatients, getInventory, InventoryItem, Patient } from '@/lib/api';
 import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction } from './actions';
 import { Trash2, Plus, Save } from 'lucide-react';

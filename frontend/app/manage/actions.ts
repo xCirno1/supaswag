@@ -1,5 +1,3 @@
-'use server'
-
 import { createPatient, deletePatient, updateInventoryStock, createInventoryItem } from '@/lib/api';
 import { revalidatePath } from 'next/cache';
 

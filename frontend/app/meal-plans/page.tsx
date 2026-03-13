@@ -1,3 +1,4 @@
+"use client"
 import { getMealPlans, MealPlan } from '@/lib/api';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 
