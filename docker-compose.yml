@@ -14,18 +14,3 @@ services:
     ports:
       - "3001:3000"
     restart: unless-stopped
-
-  nutricare-nginx:
-    image: nginx:alpine
-    container_name: nutricare-nginx
-    volumes:
-      - ./nginx/conf:/etc/nginx/conf.d
-      - /root/app/certbot/conf:/etc/letsencrypt:ro
-      - /root/app/certbot/www:/var/www/certbot:ro
-    ports:
-      - "8080:80"
-      - "8443:443"
-    depends_on:
-      - frontend
-      - backend
-    restart: unless-stopped

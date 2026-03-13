@@ -95,6 +95,4 @@ jobs:
             docker compose -p nutricare pull
             docker compose -p nutricare up -d --remove-orphans
             
-            docker restart nutricare-nginx
-            
             docker image prune -f
