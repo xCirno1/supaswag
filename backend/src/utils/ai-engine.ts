@@ -118,11 +118,17 @@ export async function analyzeDiet(patient: any, inventory: any[]) {
       safeFoods.push(item);
     }
   });
+  const meds = patient.medications || [];
+  const medText = meds.includes('None') || meds.length === 0 ? '' : `Patient is on ${meds.join(', ')}. `;
+  const flagText = flaggedFoods.length > 0
+    ? `CRITICAL: Must avoid ${flaggedFoods.map(f => f.item.name).join(', ')} due to interactions.`
+    : `No major dietary contraindications detected.`;
 
   return {
     patient,
     safeFoods,
     flaggedFoods,
-    summary: `Local Assessment: ${flaggedFoods.length > 0 ? 'Restrictions found.' : 'No major issues.'}`
+    summary: `AI Dietary Assessment: ${medText}${flagText}`
   };
+
 }
