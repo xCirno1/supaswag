@@ -1,4 +1,13 @@
+import axios from 'axios';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export interface Patient {
   id: string;
@@ -52,35 +61,38 @@ export interface AiLog {
   text: string;
 }
 
-async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    throw new Error(`API error: ${res.statusText}`);
-  }
-  return res.json();
-}
-
 // PATIENTS
-export const getPatients = () => fetchAPI<Patient[]>('/patients');
-export const getPatientById = (id: string) => fetchAPI<Patient>(`/patients/${id}`);
-export const createPatient = (data: Partial<Patient>) => fetchAPI<Patient>('/patients', { method: 'POST', body: JSON.stringify(data) });
-export const deletePatient = (id: string) => fetchAPI<{ message: string }>(`/patients/${id}`, { method: 'DELETE' });
+export const getPatients = () =>
+  apiClient.get<Patient[]>('/patients').then((res) => res.data);
+
+export const getPatientById = (id: string) =>
+  apiClient.get<Patient>(`/patients/${id}`).then((res) => res.data);
+
+export const createPatient = (data: Partial<Patient>) =>
+  apiClient.post<Patient>('/patients', data).then((res) => res.data);
+
+export const deletePatient = (id: string) =>
+  apiClient.delete<{ message: string }>(`/patients/${id}`).then((res) => res.data);
 
 // INVENTORY
-export const getInventory = () => fetchAPI<InventoryItem[]>('/inventory');
-export const updateInventoryStock = (id: string, stock: number) => fetchAPI<InventoryItem>(`/inventory/${id}`, { method: 'PATCH', body: JSON.stringify({ stock }) });
-export const createInventoryItem = (data: Partial<InventoryItem>) => fetchAPI<InventoryItem>('/inventory', { method: 'POST', body: JSON.stringify(data) }); // Note: Backend may not have this route yet.
+export const getInventory = () =>
+  apiClient.get<InventoryItem[]>('/inventory').then((res) => res.data);
+
+export const updateInventoryStock = (id: string, stock: number) =>
+  apiClient.patch<InventoryItem>(`/inventory/${id}`, { stock }).then((res) => res.data);
+
+export const createInventoryItem = (data: Partial<InventoryItem>) =>
+  apiClient.post<InventoryItem>('/inventory', data).then((res) => res.data); // TODO: Waiting for backend
 
 // AI ENGINE
-export const getPatientAnalysis = (id: string) => fetchAPI<PatientAnalysis>(`/analysis/patient/${id}`);
-export const getInventoryNeeds = () => fetchAPI<InventoryNeed[]>('/analysis/inventory-needs');
-export const getMealPlans = () => fetchAPI<MealPlan[]>('/analysis/meal-plans');
-export const getAiLogs = () => fetchAPI<AiLog[]>('/analysis/logs');
+export const getPatientAnalysis = (id: string) =>
+  apiClient.get<PatientAnalysis>(`/analysis/patient/${id}`).then((res) => res.data);
+
+export const getInventoryNeeds = () =>
+  apiClient.get<InventoryNeed[]>('/analysis/inventory-needs').then((res) => res.data);
+
+export const getMealPlans = () =>
+  apiClient.get<MealPlan[]>('/analysis/meal-plans').then((res) => res.data);
+
+export const getAiLogs = () =>
+  apiClient.get<AiLog[]>('/analysis/logs').then((res) => res.data);
