@@ -26,6 +26,6 @@ services:
       - "8080:80"
       - "8443:443"
     depends_on:
-      - nutricare-frontend
-      - nutricare-backend
+      - frontend
+      - backend
     restart: unless-stopped
