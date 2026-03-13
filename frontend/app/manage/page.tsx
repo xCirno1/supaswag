@@ -20,7 +20,6 @@ export default function ManagePage() {
 
   useEffect(() => { refresh(); }, []);
 
-  // Replace form action={addPatientAction} with:
   const handleAddPatient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);

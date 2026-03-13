@@ -1,23 +1,38 @@
 "use client"
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { getPatients, Patient } from '@/lib/api';
 import { ArrowUpRight } from 'lucide-react';
 
-export default async function PatientsPage() {
-  let patients: Patient[];
-  try {
-    patients = await getPatients();
-  } catch (error) {
-    console.error("Meal API unreachable:", error);
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
-        <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
-          <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
-          <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
-        </div>
+export default function PatientsPage() {
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPatients()
+      .then(setPatients)
+      .catch((err) => {
+        console.error("Meal API unreachable:", err);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+      <p className="text-stone-400 text-sm">Loading...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+      <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+        <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+        <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>

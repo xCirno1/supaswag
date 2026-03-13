@@ -1,23 +1,39 @@
 "use client"
+import { useState, use, useEffect } from 'react';
 import { getPatientAnalysis, PatientAnalysis } from '@/lib/api';
 import { AlertTriangle, Sparkles, Check, Pill, ShieldBan } from 'lucide-react';
 
-export default async function PatientDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  let analysis: PatientAnalysis;
-  try {
-    analysis = await getPatientAnalysis(id);
-  } catch (error) {
-    console.error("Patient API unreachable:", error);
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
-        <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
-          <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
-          <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
-        </div>
+export default function PatientDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params); // unwrap the promise synchronously
+  const [analysis, setAnalysis] = useState<PatientAnalysis | null>(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPatientAnalysis(id)
+      .then(setAnalysis)
+      .catch((err) => {
+        console.error("Patient API unreachable:", err);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+      <p className="text-stone-400 text-sm">Loading...</p>
+    </div>
+  );
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+      <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+        <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+        <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
       </div>
-    );
-  }
+    </div>
+  );
+
+  if (!analysis) return null;
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
