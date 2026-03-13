@@ -1,0 +1,98 @@
+name: Build and Push NutriCare to GHCR
+
+on:
+  push:
+    branches: ["main", "deploy"]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize image owner
+        run: echo "IMAGE_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
+      # Build and Push Backend (Node/Express/TypeScript)
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ env.IMAGE_OWNER }}/nutricare-backend:latest
+
+      # Build and Push Frontend (Next.js)
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          tags: |
+            ghcr.io/${{ env.IMAGE_OWNER }}/nutricare-frontend:latest
+
+  deploy:
+    needs: build-and-push # Only runs if the build succeeds
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare remote directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p ~/nutricare
+
+      - name: Copy docker-compose and nginx config
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml,nginx.conf"
+          target: "~/nutricare"
+
+      - name: Execute remote SSH commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/nutricare
+            
+            # Login to GHCR on the server
+            echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Generate NutriCare specific environment file
+            cat <<EOF > .env
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+            GROQ_API_MODEL=${{ secrets.GROQ_API_MODEL }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            IMAGE_OWNER=${GITHUB_REPOSITORY_OWNER,,}
+            EOF
+
+            docker compose -p nutricare pull
+            docker compose -p nutricare up -d --remove-orphans
+            
+            docker image prune -f

@@ -1,12 +1,62 @@
-import { getPatients, getInventory } from '@/lib/api';
+"use client"
+import { useState, useEffect } from 'react';
+import { getPatients, getInventory, InventoryItem, Patient } from '@/lib/api';
 import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction } from './actions';
 import { Trash2, Plus, Save } from 'lucide-react';
 
-export default async function ManagePage() {
-  const [patients, inventory] = await Promise.all([
-    getPatients(),
-    getInventory()
-  ]);
+export default function ManagePage() {
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+
+  const refresh = async () => {
+    try {
+      const [p, i] = await Promise.all([getPatients(), getInventory()]);
+      setPatients(p);
+      setInventory(i);
+    } catch (error) {
+      console.error("Management API unreachable:", error);
+    }
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  const handleAddPatient = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    await addPatientAction({
+      name: fd.get('name') as string,
+      age: parseInt(fd.get('age') as string, 10),
+      room: fd.get('room') as string,
+      medications: fd.getAll('medications') as string[],
+      allergies: fd.getAll('allergies') as string[],
+    });
+    e.currentTarget.reset();
+    refresh();
+  };
+
+  const handleRemovePatient = async (id: string) => {
+    await removePatientAction(id);
+    refresh();
+  };
+
+  const handleUpdateStock = async (id: string, e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    await updateStockAction(id, parseInt(fd.get('stock') as string, 10));
+    refresh();
+  };
+
+  const handleAddInventory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    await addInventoryAction({
+      name: fd.get('name') as string,
+      unit: fd.get('unit') as string,
+      stock: parseInt(fd.get('stock') as string, 10),
+    });
+    e.currentTarget.reset();
+    refresh();
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
@@ -148,7 +198,7 @@ export default async function ManagePage() {
           {/* Add Patient */}
           <div>
             <h2 className="font-['DM_Serif_Display',serif] text-xl text-stone-900 mb-5">Admit Patient</h2>
-            <form action={addPatientAction} className="bg-white p-7 border border-stone-200/60 rounded-sm shadow-sm space-y-5">
+            <form onSubmit={handleAddPatient} className="bg-white p-7 border border-stone-200/60 rounded-sm shadow-sm space-y-5">
               <div>
                 <label className="field-label">Full Name</label>
                 <input name="name" type="text" required className="field-input" placeholder="e.g. Jane Doe" />
@@ -214,7 +264,7 @@ export default async function ManagePage() {
                       </div>
                     </div>
                     <form action={removePatientAction.bind(null, p.id)}>
-                      <button type="submit" className="text-stone-400 hover:text-rose-600 p-2 transition-colors" title="Discharge Patient">
+                      <button onClick={() => handleRemovePatient(p.id)} type="button" className="text-stone-400 hover:text-rose-600 p-2 transition-colors" title="Discharge Patient">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </form>
@@ -234,7 +284,7 @@ export default async function ManagePage() {
 
             {/* Existing inventory cards */}
             {inventory.map(item => (
-              <form action={updateStockAction.bind(null, item.id)} key={item.id} className="bg-white p-5 border border-stone-200/60 rounded-sm shadow-sm flex flex-col gap-4">
+              <form onSubmit={(e) => handleUpdateStock(item.id, e)} className="bg-white p-5 border border-stone-200/60 rounded-sm shadow-sm flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="font-medium text-stone-900 text-sm">{item.name}</div>
@@ -254,7 +304,7 @@ export default async function ManagePage() {
             ))}
 
             {/* Add New Inventory Item card */}
-            <form action={addInventoryAction} className="inv-add-card">
+            <form onSubmit={handleAddInventory} className="inv-add-card">
               <div className="flex items-center gap-2 mb-1">
                 <Plus className="w-3.5 h-3.5 text-stone-400" />
                 <span className="text-[0.65rem] tracking-widest uppercase text-stone-400 font-medium">New Item</span>

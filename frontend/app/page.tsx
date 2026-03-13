@@ -1,28 +1,49 @@
-// nutricare/frontend/app/page.tsx
+"use client"
+import { useState, useEffect } from 'react';
 import { ShieldAlert, TrendingDown, Users, ArrowUpRight } from 'lucide-react';
-import { getPatients, getInventoryNeeds, getAiLogs } from '@/lib/api';
+import { getPatients, getInventoryNeeds, getAiLogs, Patient, InventoryNeed } from '@/lib/api';
 
-export default async function Dashboard() {
-  const [patients, inventoryNeeds] = await Promise.all([
-    getPatients(),
-    getInventoryNeeds()
-  ]);
+export default function Dashboard() {
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [inventoryNeeds, setInventoryNeeds] = useState<InventoryNeed[]>([]);
+  const [aiLogs, setAiLogs] = useState<any[]>([]);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getPatients(), getInventoryNeeds()])
+      .then(([p, inv]) => {
+        setPatients(p);
+        setInventoryNeeds(inv);
+      })
+      .catch((err) => {
+        console.error("Facility API unreachable:", err);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+
+    getAiLogs()
+      .then(setAiLogs)
+      .catch(() => console.error("Could not fetch AI Logs, using defaults."));
+  }, []);
 
   const orderCount = inventoryNeeds.filter(i => i.status === 'ORDER NOW').length;
+  const displayLogs = aiLogs;
 
-  // Attempt to fetch AI logs, fallback to defaults if the DB table is missing/empty
-  let aiLogs: any[] = [];
-  try {
-    aiLogs = await getAiLogs();
-  } catch (e) {
-    console.error("Could not fetch AI Logs, using defaults.");
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+      <p className="text-stone-400 text-sm">Loading...</p>
+    </div>
+  );
 
-  const displayLogs = aiLogs.length > 0 ? aiLogs : [
-    { time: "Just now", severity: "warn", text: "AI flagged Fresh Spinach for Patient P001 — Warfarin interaction detected." },
-    { time: "10 min ago", severity: "info", text: "Inventory analysis complete. 2 items marked for re-order." },
-    { time: "1 hr ago", severity: "ok", text: "New EHR data synced successfully from Cerner API." }
-  ];
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+      <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+        <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+        <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
