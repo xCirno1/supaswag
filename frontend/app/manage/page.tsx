@@ -1,13 +1,27 @@
-import { getPatients, getInventory } from '@/lib/api';
+import { getPatients, getInventory, InventoryItem, Patient } from '@/lib/api';
 import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction } from './actions';
 import { Trash2, Plus, Save } from 'lucide-react';
 
 export default async function ManagePage() {
-  const [patients, inventory] = await Promise.all([
-    getPatients(),
-    getInventory()
-  ]);
+  let patients: Patient[] = [];
+  let inventory: InventoryItem[] = [];
 
+  try {
+    [patients, inventory] = await Promise.all([
+      getPatients(),
+      getInventory()
+    ]);
+  } catch (error) {
+    console.error("Management API unreachable:", error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+        <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+          <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+          <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
       <style>{`

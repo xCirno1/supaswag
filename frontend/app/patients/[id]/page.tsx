@@ -1,9 +1,22 @@
-import { getPatientAnalysis } from '@/lib/api';
+import { getPatientAnalysis, PatientAnalysis } from '@/lib/api';
 import { AlertTriangle, Sparkles, Check, Pill, ShieldBan } from 'lucide-react';
 
 export default async function PatientDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const analysis = await getPatientAnalysis(id);
+  let analysis: PatientAnalysis;
+  try {
+    analysis = await getPatientAnalysis(id);
+  } catch (error) {
+    console.error("Patient API unreachable:", error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+        <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+          <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+          <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">

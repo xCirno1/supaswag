@@ -1,12 +1,25 @@
 // nutricare/frontend/app/page.tsx
 import { ShieldAlert, TrendingDown, Users, ArrowUpRight } from 'lucide-react';
-import { getPatients, getInventoryNeeds, getAiLogs } from '@/lib/api';
+import { getPatients, getInventoryNeeds, getAiLogs, Patient, InventoryNeed } from '@/lib/api';
 
 export default async function Dashboard() {
-  const [patients, inventoryNeeds] = await Promise.all([
-    getPatients(),
-    getInventoryNeeds()
-  ]);
+  let patients: Patient[], inventoryNeeds: InventoryNeed[];
+  try {
+    [patients, inventoryNeeds] = await Promise.all([
+      getPatients(),
+      getInventoryNeeds()
+    ]);
+  } catch (error) {
+    console.error("Facility API unreachable:", error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+        <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+          <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+          <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
+        </div>
+      </div>
+    );
+  }
 
   const orderCount = inventoryNeeds.filter(i => i.status === 'ORDER NOW').length;
 

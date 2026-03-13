@@ -1,8 +1,22 @@
-import { getInventoryNeeds } from '@/lib/api';
+import { getInventoryNeeds, InventoryNeed } from '@/lib/api';
 import { ShoppingCart, ArrowUpRight } from 'lucide-react';
 
 export default async function InventoryPage() {
-  const inventoryData = await getInventoryNeeds();
+  let inventoryData: InventoryNeed[] = [];
+
+  try {
+    inventoryData = await getInventoryNeeds();
+  } catch (error) {
+    console.error("Failed to fetch inventory:", error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F5F0]">
+        <div className="text-center p-8 border border-stone-200 bg-white rounded-sm">
+          <h2 className="font-['DM_Serif_Display'] text-xl mb-2">System Offline</h2>
+          <p className="text-stone-500 text-sm">Unable to connect to the facility database.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
