@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
+import { cache } from '../utils/cache';
 
 export const getAllPatients = async (req: Request, res: Response) => {
   try {
@@ -24,7 +25,6 @@ export const addPatient = async (req: Request, res: Response) => {
   try {
     const { name, age, room, conditions, medications, allergies } = req.body;
 
-    // Generate next PXXX ID
     const idResult = await pool.query("SELECT MAX(CAST(SUBSTRING(id FROM 2) AS INTEGER)) as max_id FROM patients");
     const nextNum = (idResult.rows[0].max_id || 0) + 1;
     const newId = `P${String(nextNum).padStart(3, '0')}`;
@@ -34,6 +34,11 @@ export const addPatient = async (req: Request, res: Response) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [newId, name, age, room, conditions || ['New Patient Admission'], medications || ['None'], allergies || ['None']]
     );
+
+    // Invalidate all caches, patient roster changed
+    cache.invalidate('analysis:');
+    console.log('[Cache BUST] New patient admitted — all analysis caches cleared');
+
     res.status(201).json(insertResult.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Database error' });
@@ -43,6 +48,11 @@ export const addPatient = async (req: Request, res: Response) => {
 export const removePatient = async (req: Request, res: Response) => {
   try {
     await pool.query('DELETE FROM patients WHERE id = $1', [req.params.id]);
+
+    // Invalidate all AI caches and the specific patient cache
+    cache.invalidate('analysis:');
+    console.log(`[Cache BUST] Patient ${req.params.id} discharged — all analysis caches cleared`);
+
     res.status(200).json({ message: 'Patient removed successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Database error' });

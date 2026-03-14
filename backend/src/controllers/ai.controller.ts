@@ -1,14 +1,33 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 import { analyzeDietBatch } from '../utils/ai-engine';
+import { cache } from '../utils/cache';
+
+// Cache key constants
+const CACHE_KEY_INVENTORY_NEEDS = 'analysis:inventory-needs';
+const CACHE_KEY_MEAL_PLANS = 'analysis:meal-plans';
+const cacheKeyPatient = (id: string) => `analysis:patient:${id}`;
 
 export const getPatientAnalysis = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const cacheKey = cacheKeyPatient(id);
+
+  // Check cache first
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    console.log(`[Cache HIT] ${cacheKey}`);
+    return res.status(200).json(cached);
+  }
+  console.log(`[Cache MISS] ${cacheKey}`);
+
   try {
-    const patientRes = await pool.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
+    const patientRes = await pool.query('SELECT * FROM patients WHERE id = $1', [id]);
     if (patientRes.rows.length === 0) return res.status(404).json({ error: 'Patient not found' });
 
     const inventoryRes = await pool.query('SELECT * FROM inventory');
     const [analysis] = await analyzeDietBatch([patientRes.rows[0]], inventoryRes.rows);
+
+    cache.set(cacheKey, analysis);
     res.status(200).json(analysis);
   } catch (error) {
     res.status(500).json({ error: 'Analysis failed' });
@@ -16,6 +35,14 @@ export const getPatientAnalysis = async (req: Request, res: Response) => {
 };
 
 export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
+  // Check cache first
+  const cached = cache.get(CACHE_KEY_INVENTORY_NEEDS);
+  if (cached) {
+    console.log(`[Cache HIT] ${CACHE_KEY_INVENTORY_NEEDS}`);
+    return res.status(200).json(cached);
+  }
+  console.log(`[Cache MISS] ${CACHE_KEY_INVENTORY_NEEDS}`);
+
   try {
     const [patientsRes, inventoryRes] = await Promise.all([
       pool.query('SELECT * FROM patients'),
@@ -25,7 +52,6 @@ export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
     const patients = patientsRes.rows;
     const rawInventory = inventoryRes.rows;
 
-    // Single API call for all patients
     const analyses = await analyzeDietBatch(patients, rawInventory);
 
     const inventory = rawInventory.map(item => ({ ...item, requested: 0, blockedCount: 0 }));
@@ -49,6 +75,7 @@ export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
         : 'Approved for general population.',
     }));
 
+    cache.set(CACHE_KEY_INVENTORY_NEEDS, needsAnalysis);
     res.status(200).json(needsAnalysis);
   } catch (error) {
     res.status(500).json({ error: 'Analysis failed' });
@@ -56,6 +83,14 @@ export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
 };
 
 export const getMealPlans = async (req: Request, res: Response) => {
+  // Check cache first
+  const cached = cache.get(CACHE_KEY_MEAL_PLANS);
+  if (cached) {
+    console.log(`[Cache HIT] ${CACHE_KEY_MEAL_PLANS}`);
+    return res.status(200).json(cached);
+  }
+  console.log(`[Cache MISS] ${CACHE_KEY_MEAL_PLANS}`);
+
   try {
     const [patientsRes, inventoryRes] = await Promise.all([
       pool.query('SELECT * FROM patients'),
@@ -81,6 +116,7 @@ export const getMealPlans = async (req: Request, res: Response) => {
       };
     });
 
+    cache.set(CACHE_KEY_MEAL_PLANS, mealPlans);
     res.status(200).json(mealPlans);
   } catch (error) {
     res.status(500).json({ error: 'Analysis failed' });
