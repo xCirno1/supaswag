@@ -12,6 +12,7 @@ router.get('/patients', patientController.getAllPatients);
 router.get('/patients/:id', patientController.getPatientById);
 router.post('/patients', patientController.addPatient);
 router.delete('/patients/:id', patientController.removePatient);
+router.patch('/patients/:id/priority', patientController.updatePatientPriority);
 
 // ==========================================
 // INVENTORY API

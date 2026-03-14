@@ -9,6 +9,16 @@ const apiClient = axios.create({
   },
 });
 
+// 0 = routine, 1 = low, 2 = high, 3 = critical
+export type Priority = 0 | 1 | 2 | 3;
+
+export const PRIORITY_CONFIG: Record<Priority, { label: string; shortLabel: string; color: string; bg: string; border: string; dotColor: string }> = {
+  0: { label: 'Routine', shortLabel: 'Routine', color: '#a8a29e', bg: 'rgba(168,162,158,0.08)', border: 'rgba(168,162,158,0.25)', dotColor: '#c4bfba' },
+  1: { label: 'Low', shortLabel: 'Low', color: '#16a34a', bg: 'rgba(22,163,74,0.07)', border: 'rgba(22,163,74,0.25)', dotColor: '#4ade80' },
+  2: { label: 'High', shortLabel: 'High', color: '#d97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.28)', dotColor: '#fbbf24' },
+  3: { label: 'Critical', shortLabel: 'CRIT', color: '#dc2626', bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.3)', dotColor: '#f87171' },
+};
+
 export interface Patient {
   id: string;
   name: string;
@@ -17,6 +27,7 @@ export interface Patient {
   conditions: string[];
   medications: string[];
   allergies: string[];
+  priority: Priority;
 }
 
 export interface InventoryItem {
@@ -73,6 +84,9 @@ export const createPatient = (data: Partial<Patient>) =>
 
 export const deletePatient = (id: string) =>
   apiClient.delete<{ message: string }>(`/patients/${id}`).then((res) => res.data);
+
+export const updatePatientPriority = (id: string, priority: Priority) =>
+  apiClient.patch<Patient>(`/patients/${id}/priority`, { priority }).then((res) => res.data);
 
 // INVENTORY
 export const getInventory = () =>

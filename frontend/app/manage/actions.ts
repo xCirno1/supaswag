@@ -1,4 +1,5 @@
 import { createPatient, deletePatient, updateInventoryStock, createInventoryItem, addAllergy, addMedication } from '@/lib/api';
+import type { Priority } from '@/lib/api';
 
 export async function addPatientAction(data: {
   name: string;
@@ -6,6 +7,7 @@ export async function addPatientAction(data: {
   room: string;
   medications?: string[];
   allergies?: string[];
+  priority?: Priority;
 }) {
   await createPatient({
     name: data.name,
@@ -13,7 +15,8 @@ export async function addPatientAction(data: {
     room: data.room,
     conditions: ['New Patient Admission'],
     medications: data.medications?.length ? data.medications : ['None'],
-    allergies: data.allergies?.length ? data.allergies : ['None']
+    allergies: data.allergies?.length ? data.allergies : ['None'],
+    priority: data.priority ?? 0,
   });
 }
 

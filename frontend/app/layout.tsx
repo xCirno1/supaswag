@@ -1,159 +1,135 @@
-// nutricare/frontend/app/layout.tsx
 import './globals.css';
-import { Activity, Users, Utensils, Box, Settings } from 'lucide-react';
 import Link from 'next/link';
 
-export const metadata = { title: 'NutriCare AI', description: 'Healthcare Food Planning' };
+export const metadata = { title: 'SupaCare', description: 'Healthcare Food Planning' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Serif+Display:ital@0;1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body style={{ fontFamily: "'DM Sans', sans-serif" }} className="flex h-screen bg-[#F7F5F0] text-stone-800">
+      <body style={{ fontFamily: "'DM Sans', sans-serif" }} className="flex h-screen bg-[#F9F6F1] text-[#1A1A18] overflow-hidden">
         <style>{`
-          .nav-link {
+          :root {
+            --bg: #F9F6F1;
+            --card: #FFFFFF;
+            --green: #2D6A4F;
+            --green-light: #D8EED8;
+            --green-mid: #52B788;
+            --amber: #B5641B;
+            --amber-light: #FAEEDA;
+            --red-light: #FCEBEB;
+            --red: #A32D2D;
+            --teal: #0F6E56;
+            --teal-light: #E1F5EE;
+            --text: #1A1A18;
+            --muted: #6B6860;
+            --hint: #A8A59F;
+            --border: #E5E0D6;
+          }
+
+          .sidebar-nav-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            gap: 0.875rem;
-            padding: 0.6rem 0;
-            font-size: 0.8rem;
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
-            font-weight: 500;
-            color: #a8a29e;
-            border-bottom: 1px solid transparent;
-            transition: color 0.2s ease, border-color 0.2s ease;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s;
             text-decoration: none;
-            position: relative;
           }
+          .sidebar-nav-item:hover { background: rgba(255,255,255,0.1); }
+          .sidebar-nav-item.active { background: rgba(82,183,136,0.25); }
+          .sidebar-nav-item svg {
+            width: 18px; height: 18px;
+            stroke: rgba(255,255,255,0.5); fill: none;
+            stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+            transition: stroke 0.15s;
+          }
+          .sidebar-nav-item:hover svg { stroke: rgba(255,255,255,0.8); }
+          .sidebar-nav-item.active svg { stroke: #52B788; }
 
-          .nav-link:hover {
-            color: #1c1917;
-            border-bottom-color: rgba(28,25,23,0.12);
+          .badge {
+            font-size: 11px; font-weight: 500;
+            padding: 3px 9px; border-radius: 20px;
           }
-
-          .nav-link.active {
-            color: #1c1917;
-            border-bottom-color: #1c1917;
-          }
-
-          .nav-link svg {
-            width: 1rem;
-            height: 1rem;
-            stroke-width: 1.75;
-            flex-shrink: 0;
-          }
-
-          .wordmark {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.35rem;
-            letter-spacing: -0.01em;
-            color: #1c1917;
-            line-height: 1;
-          }
-
-          .wordmark em {
-            font-style: italic;
-            color: #78716c;
-          }
-
-          .sidebar-rule {
-            height: 1px;
-            background: linear-gradient(to right, rgba(28,25,23,0.15), transparent);
-          }
-
-          .ai-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            font-size: 0.65rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            font-weight: 500;
-          }
-
-          .pulse {
-            width: 0.375rem;
-            height: 0.375rem;
-            border-radius: 50%;
-            background: #10b981;
-            animation: pulse 2.5s ease-in-out infinite;
-          }
-
-          @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.85); }
-          }
-
-          .version-tag {
-            font-size: 0.6rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: #d6d3d1;
-            font-weight: 400;
-          }
+          .badge-green { background: #D8EED8; color: #1A4731; }
+          .badge-amber { background: #FAEEDA; color: #7A3E0D; }
+          .badge-red { background: #FCEBEB; color: #A32D2D; }
+          .badge-teal { background: #E1F5EE; color: #0F6E56; }
         `}</style>
 
-        {/* Sidebar */}
-        <aside
-          className="flex flex-col"
-          style={{
-            width: '13rem',
-            borderRight: '1px solid rgba(28,25,23,0.1)',
-            background: '#F7F5F0',
-            padding: '2rem 1.75rem',
-            flexShrink: 0,
-          }}
-        >
-          {/* Wordmark */}
-          <div className="mb-8">
-            <div className="wordmark">NutriCare <em>AI</em></div>
-            <div className="version-tag mt-1">v2.4.1 · Clinical</div>
+        {/* Icon Sidebar */}
+        <aside style={{
+          width: '64px',
+          background: '#1C2B22',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '16px 0',
+          gap: '6px',
+          flexShrink: 0,
+        }}>
+          {/* Logo mark */}
+          <div style={{
+            width: 36, height: 36,
+            background: '#52B788',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 8,
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 3C8 3 5 6 5 10c0 2 1 4 3 5.5l2 1.5v2h4v-2l2-1.5C18 14 19 12 19 10c0-4-3-7-7-7z" />
+              <rect x="9" y="18" width="6" height="1.5" rx="0.75" />
+              <rect x="10" y="20" width="4" height="1.5" rx="0.75" />
+            </svg>
           </div>
 
-          <div className="sidebar-rule mb-7" />
+          <NavIcon href="/" title="Overview">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
+          </NavIcon>
+          <NavIcon href="/patients" title="Patients">
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3" /><path d="M3 20c0-4 3-6 6-6s6 2 6 6" /><circle cx="17" cy="9" r="2" /><path d="M17 14c2.5 0 4 1.5 4 4.5" /></svg>
+          </NavIcon>
+          <NavIcon href="/meal-plans" title="Meal Plans">
+            <svg viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z" /></svg>
+          </NavIcon>
+          <NavIcon href="/inventory" title="Inventory">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /></svg>
+          </NavIcon>
+          <NavIcon href="/manage" title="Manage">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" /></svg>
+          </NavIcon>
 
-          {/* Nav */}
-          <nav className="flex flex-col gap-0.5 flex-1">
-            <NavItem href="/" icon={<Activity />} label="Overview" />
-            <NavItem href="/patients" icon={<Users />} label="Patients" />
-            <NavItem href="/meal-plans" icon={<Utensils />} label="Meal Plans" />
-            <NavItem href="/inventory" icon={<Box />} label="Inventory" />
-            <NavItem href="/manage" icon={<Settings />} label="Manage" />
-          </nav>
+          <div style={{ flex: 1 }} />
 
-          {/* AI Status */}
-          <div>
-            <div className="sidebar-rule mb-5" />
-            <div className="ai-badge text-emerald-600 mb-2">
-              <span className="pulse" />
-              AI Active
-            </div>
-            <p style={{ fontSize: '0.7rem', color: '#a8a29e', lineHeight: '1.5' }}>
-              EHR cross-referencing<br />running in real-time
-            </p>
-          </div>
+          {/* Avatar */}
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: '#52B788',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 500, color: 'white',
+          }}>SC</div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto" style={{ padding: '3rem 3.5rem' }}>
+        {/* Main content fills the rest */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {children}
-        </main>
+        </div>
       </body>
     </html>
   );
 }
 
-function NavItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function NavIcon({ href, title, children }: { href: string; title: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="nav-link">
-      {icon}
-      {label}
+    <Link href={href} className="sidebar-nav-item" title={title}>
+      {children}
     </Link>
   );
 }
