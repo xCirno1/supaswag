@@ -96,3 +96,16 @@ export const getMealPlans = () =>
 
 export const getAiLogs = () =>
   apiClient.get<AiLog[]>('/analysis/logs').then((res) => res.data);
+
+// CLINICAL OPTIONS
+export const getMedications = () =>
+  apiClient.get<string[]>('/medications').then((res) => res.data);
+
+export const addMedication = (name: string) =>
+  apiClient.post<{ name: string }>('/medications', { name }).then((res) => res.data);
+
+export const getAllergies = () =>
+  apiClient.get<string[]>('/allergies').then((res) => res.data);
+
+export const addAllergy = (name: string) =>
+  apiClient.post<{ name: string }>('/allergies', { name }).then((res) => res.data);

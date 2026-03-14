@@ -75,7 +75,8 @@ export async function analyzeDietBatchWithGroq(
   const inventoryList = inventory.map(i => ({ id: i.id, name: i.name, tags: i.tags }));
 
   const prompt = `
-    You are a clinical AI dietitian. Evaluate each patient's dietary restrictions against the inventory.
+    You are a clinical AI dietitian. Evaluate each patient's dietary restrictions against the inventory. DO NOT mention
+    the blocked foods if it does not present in the case.
 
     Patients:
     ${JSON.stringify(patients.map(p => ({

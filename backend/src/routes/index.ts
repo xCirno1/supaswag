@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as patientController from '../controllers/patient.controller';
 import * as inventoryController from '../controllers/inventory.controller';
 import * as aiController from '../controllers/ai.controller';
-
+import * as clinicalController from '../controllers/clinical.controller';
 const router = Router();
 
 // ==========================================
@@ -26,5 +26,13 @@ router.get('/analysis/patient/:id', aiController.getPatientAnalysis);
 router.get('/analysis/inventory-needs', aiController.getBulkInventoryNeeds);
 router.get('/analysis/meal-plans', aiController.getMealPlans);
 router.get('/analysis/logs', aiController.getAiLogs);
+
+// ==========================================
+// CLINICAL OPTIONS API
+// ==========================================
+router.get('/medications', clinicalController.getMedications);
+router.post('/medications', clinicalController.addMedication);
+router.get('/allergies', clinicalController.getAllergies);
+router.post('/allergies', clinicalController.addAllergy);
 
 export default router;

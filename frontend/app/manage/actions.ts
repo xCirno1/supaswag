@@ -1,4 +1,4 @@
-import { createPatient, deletePatient, updateInventoryStock, createInventoryItem } from '@/lib/api';
+import { createPatient, deletePatient, updateInventoryStock, createInventoryItem, addAllergy, addMedication } from '@/lib/api';
 
 export async function addPatientAction(data: {
   name: string;
@@ -39,4 +39,12 @@ export async function addInventoryAction(data: {
   } catch (err) {
     console.warn("Backend missing POST /inventory endpoint. Ignoring creation locally.");
   }
+}
+
+export async function addMedicationAction(name: string) {
+  if (name.trim()) await addMedication(name.trim());
+}
+
+export async function addAllergyAction(name: string) {
+  if (name.trim()) await addAllergy(name.trim());
 }

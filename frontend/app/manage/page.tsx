@@ -1,18 +1,29 @@
 "use client"
 import { useState, useEffect } from 'react';
-import { getPatients, getInventory, InventoryItem, Patient } from '@/lib/api';
-import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction } from './actions';
+import { getPatients, getInventory, getMedications, getAllergies, InventoryItem, Patient } from '@/lib/api';
+import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction, addMedicationAction, addAllergyAction } from './actions';
 import { Trash2, Plus, Save } from 'lucide-react';
 
 export default function ManagePage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [medications, setMedications] = useState<string[]>(['None']);
+  const [allergies, setAllergies] = useState<string[]>(['None']);
+  const [newMed, setNewMed] = useState('');
+  const [newAllergy, setNewAllergy] = useState('');
 
   const refresh = async () => {
     try {
-      const [p, i] = await Promise.all([getPatients(), getInventory()]);
+      const [p, i, m, a] = await Promise.all([
+        getPatients(),
+        getInventory(),
+        getMedications().catch(() => []),
+        getAllergies().catch(() => [])
+      ]);
       setPatients(p);
       setInventory(i);
+      setMedications(['None', ...m.filter(x => x !== 'None')]);
+      setAllergies(['None', ...a.filter(x => x !== 'None')]);
     } catch (error) {
       console.error("Management API unreachable:", error);
     }
@@ -22,7 +33,8 @@ export default function ManagePage() {
 
   const handleAddPatient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;        // capture the ref synchronously
+    const fd = new FormData(form);
     await addPatientAction({
       name: fd.get('name') as string,
       age: parseInt(fd.get('age') as string, 10),
@@ -30,7 +42,7 @@ export default function ManagePage() {
       medications: fd.getAll('medications') as string[],
       allergies: fd.getAll('allergies') as string[],
     });
-    e.currentTarget.reset();
+    form.reset();
     refresh();
   };
 
@@ -48,13 +60,29 @@ export default function ManagePage() {
 
   const handleAddInventory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;        // capture the ref synchronously
+
+    const fd = new FormData(form);
     await addInventoryAction({
       name: fd.get('name') as string,
       unit: fd.get('unit') as string,
       stock: parseInt(fd.get('stock') as string, 10),
     });
-    e.currentTarget.reset();
+    form.reset();
+    refresh();
+  };
+
+  const handleAddNewMed = async () => {
+    if (!newMed.trim()) return;
+    await addMedicationAction(newMed);
+    setNewMed('');
+    refresh();
+  };
+
+  const handleAddNewAllergy = async () => {
+    if (!newAllergy.trim()) return;
+    await addAllergyAction(newAllergy);
+    setNewAllergy('');
     refresh();
   };
 
@@ -217,29 +245,36 @@ export default function ManagePage() {
               {/* Medications — toggle pills */}
               <div>
                 <label className="field-label">Medications</label>
-                <div className="toggle-group">
-                  {['None', 'Warfarin', 'Lisinopril', 'Metformin', 'MAOI'].map(med => (
+                <div className="toggle-group mb-2">
+                  {medications.map(med => (
                     <span key={med}>
                       <input type="checkbox" name="medications" value={med} id={`med-${med}`} />
                       <label htmlFor={`med-${med}`}>{med}</label>
                     </span>
                   ))}
                 </div>
+                <div className="flex gap-2">
+                  <input type="text" value={newMed} onChange={(e) => setNewMed(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewMed(); } }} className="field-input flex-1 py-1 text-xs" placeholder="Add new medication..." />
+                  <button type="button" onClick={handleAddNewMed} className="bg-stone-100 border border-stone-200 hover:bg-stone-200 text-stone-600 px-3 rounded-sm text-[0.65rem] uppercase font-medium transition-colors">Add</button>
+                </div>
               </div>
 
               {/* Allergies — toggle pills */}
               <div>
                 <label className="field-label">Allergies</label>
-                <div className="toggle-group">
-                  {['None', 'Peanuts', 'Shellfish', 'Dairy', 'Gluten'].map(allergy => (
+                <div className="toggle-group mb-2">
+                  {allergies.map(allergy => (
                     <span key={allergy}>
                       <input type="checkbox" name="allergies" value={allergy} id={`allergy-${allergy}`} />
                       <label htmlFor={`allergy-${allergy}`}>{allergy}</label>
                     </span>
                   ))}
                 </div>
+                <div className="flex gap-2">
+                  <input type="text" value={newAllergy} onChange={(e) => setNewAllergy(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewAllergy(); } }} className="field-input flex-1 py-1 text-xs" placeholder="Add new allergy..." />
+                  <button type="button" onClick={handleAddNewAllergy} className="bg-stone-100 border border-stone-200 hover:bg-stone-200 text-stone-600 px-3 rounded-sm text-[0.65rem] uppercase font-medium transition-colors">Add</button>
+                </div>
               </div>
-
               <button type="submit" className="flex items-center justify-center gap-2 w-full bg-stone-900 text-stone-50 py-3 mt-2 text-[0.7rem] tracking-widest uppercase font-medium rounded-sm hover:bg-stone-800 transition-colors">
                 <Plus className="w-4 h-4" /> Admit Patient
               </button>
@@ -282,7 +317,7 @@ export default function ManagePage() {
 
             {/* Existing inventory cards */}
             {inventory.map(item => (
-              <form onSubmit={(e) => handleUpdateStock(item.id, e)} className="bg-white p-5 border border-stone-200/60 rounded-sm shadow-sm flex flex-col gap-4">
+              <form key={`f-${item.id}`} onSubmit={(e) => handleUpdateStock(item.id, e)} className="bg-white p-5 border border-stone-200/60 rounded-sm shadow-sm flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="font-medium text-stone-900 text-sm">{item.name}</div>
