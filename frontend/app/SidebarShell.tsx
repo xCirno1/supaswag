@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/authContext";
+import Image from "next/image";
 
 const HIDDEN_PATHS = ["/signin"];
 
@@ -19,12 +20,14 @@ export default function SidebarShell({ children }: { children: React.ReactNode }
       <aside className="sidebar">
         {/* Logo */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo-mark">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-              <path d="M12 3C8 3 5 6 5 10c0 2 1 4 3 5.5l2 1.5v2h4v-2l2-1.5C18 14 19 12 19 10c0-4-3-7-7-7z" />
-              <rect x="9" y="18" width="6" height="1.5" rx="0.75" />
-              <rect x="10" y="20" width="4" height="1.5" rx="0.75" />
-            </svg>
+          <div className="sidebar-logo-mark" style={{ background: "transparent" }}>
+            <Image
+              src="/assets/supacare-icon.png"
+              alt="SupaCare Icon"
+              width={36}
+              height={36}
+              style={{ borderRadius: "10px" }}
+            />
           </div>
           <span className="sidebar-logo-text">
             Supa<span>care</span>
