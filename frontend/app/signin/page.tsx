@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/authContext";
 
@@ -13,7 +13,8 @@ const ROLES: { value: Role; label: string; icon: string; email: string }[] = [
 
 const DEMO_PASSWORD = "unihack2026";
 
-export default function LoginPage() {
+// ── Inner component that uses useSearchParams ──
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get("from") || "/";
@@ -501,5 +502,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Outer page component with Suspense boundary ──
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
