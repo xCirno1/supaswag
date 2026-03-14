@@ -1,7 +1,7 @@
 {
-  "name": "nutricare-backend",
+  "name": "supacare-backend",
   "version": "1.0.0",
-  "description": "Express backend for NutriCare AI",
+  "description": "Express backend for SupaCare AI",
   "main": "server.ts",
   "scripts": {
     "start": "ts-node src/server.ts",

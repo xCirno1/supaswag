@@ -1,4 +1,4 @@
-name: Build and Push NutriCare to GHCR
+name: Build and Push SupaCare to GHCR
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ghcr.io/${{ env.IMAGE_OWNER }}/nutricare-backend:latest
+            ghcr.io/${{ env.IMAGE_OWNER }}/supacare-backend:latest
 
       # Build and Push Frontend (Next.js)
       - name: Build and push Frontend
@@ -43,7 +43,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
           tags: |
-            ghcr.io/${{ env.IMAGE_OWNER }}/nutricare-frontend:latest
+            ghcr.io/${{ env.IMAGE_OWNER }}/supacare-frontend:latest
 
   deploy:
     needs: build-and-push # Only runs if the build succeeds
@@ -60,7 +60,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            mkdir -p ~/nutricare
+            mkdir -p ~/supacare
 
       - name: Copy docker-compose and nginx config
         uses: appleboy/scp-action@v0.1.7
@@ -69,7 +69,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.yml,nginx.conf"
-          target: "~/nutricare"
+          target: "~/supacare"
 
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@v1.0.3
@@ -78,12 +78,12 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/nutricare
+            cd ~/supacare
             
             # Login to GHCR on the server
             echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Generate NutriCare specific environment file
+            # Generate supaCare specific environment file
             cat <<EOF > .env
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
@@ -92,7 +92,7 @@ jobs:
             IMAGE_OWNER=${GITHUB_REPOSITORY_OWNER,,}
             EOF
 
-            docker compose -p nutricare pull
-            docker compose -p nutricare up -d --remove-orphans
+            docker compose -p supacare pull
+            docker compose -p supacare up -d --remove-orphans
             
             docker image prune -f

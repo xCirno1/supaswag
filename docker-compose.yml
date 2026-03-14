@@ -1,15 +1,15 @@
 services:
   backend:
-    image: ghcr.io/xcirno1/nutricare-backend:latest
-    container_name: nutricare-backend
+    image: ghcr.io/xcirno1/supacare-backend:latest
+    container_name: supacare-backend
     env_file: .env
     ports:
       - "5000:5000"
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/xcirno1/nutricare-frontend:latest
-    container_name: nutricare-frontend
+    image: ghcr.io/xcirno1/supacare-frontend:latest
+    container_name: supacare-frontend
     env_file: .env
     ports:
       - "3001:3000"

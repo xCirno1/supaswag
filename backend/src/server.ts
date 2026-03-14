@@ -14,5 +14,5 @@ app.use(express.json());
 app.use('', apiRoutes);
 
 app.listen(PORT, () => {
-  console.log(`🚀 NutriCare AI Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 SupaCare AI Backend running on http://localhost:${PORT}`);
 });
