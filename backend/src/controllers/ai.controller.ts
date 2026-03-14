@@ -70,7 +70,7 @@ export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
     const needsAnalysis = inventory.map(item => ({
       ...item,
       status: item.stock < item.requested * 7 ? 'ORDER NOW' : 'SUFFICIENT',
-      aiInsight: item.blockedCount > patients.length * 0.2
+      aiInsight: item.blockedCount > patients.length * 0.1
         ? `Warning: ${item.blockedCount} patients cannot eat this due to EHR conflicts. Reduce bulk order.`
         : 'Approved for general population.',
     }));
