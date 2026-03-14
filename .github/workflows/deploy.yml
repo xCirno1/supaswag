@@ -90,6 +90,7 @@ jobs:
             GROQ_API_MODEL=${{ secrets.GROQ_API_MODEL }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NODE_ENV=${{ secrets.NODE_ENV }}
             IMAGE_OWNER=${GITHUB_REPOSITORY_OWNER,,}
             EOF
 
