@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from 'react';
 import { getPatients, getInventory, getMedications, getAllergies, updatePatientPriority, InventoryItem, Patient, Priority, PRIORITY_CONFIG } from '@/lib/api';
-import { useSettings } from '@/lib/settings-context';
+import { useSettings } from '@/lib/settingsContext';
 import { displayStock, type SIUnit } from '@/lib/units';
 import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction, addMedicationAction, addAllergyAction } from './actions';
 import { Trash2, Plus, Save, Search, X, SlidersHorizontal } from 'lucide-react';

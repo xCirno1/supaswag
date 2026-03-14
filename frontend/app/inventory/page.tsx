@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { getInventoryNeeds, updateInventoryStock, InventoryNeed } from '@/lib/api';
-import { useSettings } from '@/lib/settings-context';
+import { useSettings } from '@/lib/settingsContext';
 import { displayStock } from '@/lib/units';
 import { Check, X } from 'lucide-react';
 import BulkPlanButton from './BulkPlanButton';

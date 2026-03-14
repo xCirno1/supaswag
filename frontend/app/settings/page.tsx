@@ -1,5 +1,5 @@
 "use client"
-import { useSettings, WeightUnit, EnergyUnit } from '@/lib/settings-context';
+import { useSettings, WeightUnit, EnergyUnit } from '@/lib/settingsContext';
 
 const WEIGHT_UNITS: { value: WeightUnit; label: string; desc: string }[] = [
   { value: 'g', label: 'g', desc: 'Grams' },

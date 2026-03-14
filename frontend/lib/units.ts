@@ -1,4 +1,4 @@
-import type { WeightUnit, EnergyUnit } from './settings-context';
+import type { WeightUnit, EnergyUnit } from './settingsContext';
 
 export type SIUnit = 'g' | 'ml' | 'pcs';
 

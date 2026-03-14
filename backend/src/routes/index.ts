@@ -5,8 +5,17 @@ import * as aiController from '../controllers/ai.controller';
 import * as clinicalController from '../controllers/clinical.controller';
 import * as foodPlanController from '../controllers/foodplan.controller';
 import * as settingsController from '../controllers/settings.controller';
+import * as authController from '../controllers/auth.controller';
 
 const router = Router();
+
+// ==========================================
+// AUTH API
+// ==========================================
+router.post('/auth/login', authController.login);
+router.post('/auth/logout', authController.logout);
+router.get('/auth/me', authController.me);
+
 
 // ==========================================
 // PATIENTS API

@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { getMealPlans, MealPlan } from '@/lib/api';
-import { useSettings } from '@/lib/settings-context';
+import { useSettings } from '@/lib/settingsContext';
 import { displayEnergy } from '@/lib/units';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 
