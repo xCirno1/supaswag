@@ -68,11 +68,43 @@ function partitionInventory(
   );
 }
 
-async function analyzeWithGroq(patient: any, inventory: any[]): Promise<AnalysisResult> {
+export async function analyzeDietBatchWithGroq(
+  patients: any[],
+  inventory: any[]
+): Promise<AnalysisResult[]> {
+  const inventoryList = inventory.map(i => ({ id: i.id, name: i.name, tags: i.tags }));
+
+  const prompt = `
+    You are a clinical AI dietitian. Evaluate each patient's dietary restrictions against the inventory.
+
+    Patients:
+    ${JSON.stringify(patients.map(p => ({
+    id: p.id,
+    name: p.name,
+    conditions: p.conditions ?? [],
+    medications: p.medications ?? [],
+    allergies: p.allergies ?? [],
+  })))}
+
+    Inventory:
+    ${JSON.stringify(inventoryList)}
+
+    Respond ONLY with a valid JSON object:
+    {
+      "results": [
+        {
+          "patientId": "patient_id",
+          "flaggedFoodIds": [{ "id": "item_id", "reason": "Clinical reason" }],
+          "summary": "Short clinical summary"
+        }
+      ]
+    }
+  `;
+
   const completion = await groq.chat.completions.create({
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: buildPrompt(patient, inventory) }
+      { role: 'user', content: prompt }
     ],
     model: process.env.GROQ_API_MODEL || "llama-3.3-70b-versatile",
     response_format: { type: "json_object" },
@@ -82,16 +114,18 @@ async function analyzeWithGroq(patient: any, inventory: any[]): Promise<Analysis
   const content = completion.choices[0]?.message?.content;
   if (!content) throw new Error("Empty response from Groq");
 
-  const { flaggedFoodIds = [], summary = "AI Dietary Assessment complete." } = JSON.parse(content);
+  const { results } = JSON.parse(content);
 
-  return {
-    patient,
-    ...partitionInventory(inventory, flaggedFoodIds),
-    summary,
-  };
+  const patientMap = new Map(patients.map(p => [String(p.id), p]));
+
+  return results.map((r: any) => ({
+    patient: patientMap.get(String(r.patientId)),
+    ...partitionInventory(inventory, r.flaggedFoodIds ?? []),
+    summary: r.summary ?? "AI Dietary Assessment complete.",
+  }));
 }
 
-export async function analyzeDiet(patient: any, inventory: any[]): Promise<AnalysisResult> {
+export async function analyzeDietBatch(patients: any[], inventory: any[]): Promise<AnalysisResult[]> {
   if (!apiKey) {
     throw new Error(
       "GROQ_API_KEY is not set. dietary analysis requires an AI backend — " +
@@ -100,7 +134,7 @@ export async function analyzeDiet(patient: any, inventory: any[]): Promise<Analy
   }
 
   try {
-    return await analyzeWithGroq(patient, inventory);
+    return await analyzeDietBatchWithGroq(patients, inventory);
   } catch (err) {
     console.error("Groq SDK Error:", err);
     throw new Error(`Dietary analysis failed: ${err instanceof Error ? err.message : String(err)}`);

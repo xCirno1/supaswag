@@ -263,11 +263,9 @@ export default function ManagePage() {
                         <span className="text-[0.65rem] tracking-wider uppercase">{p.id}</span>
                       </div>
                     </div>
-                    <form action={removePatientAction.bind(null, p.id)}>
-                      <button onClick={() => handleRemovePatient(p.id)} type="button" className="text-stone-400 hover:text-rose-600 p-2 transition-colors" title="Discharge Patient">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </form>
+                    <button onClick={() => handleRemovePatient(p.id)} type="button" className="text-stone-400 hover:text-rose-600 p-2 transition-colors" title="Discharge Patient">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))
               )}
