@@ -72,10 +72,13 @@ export function displayStock(
     case 'ml':
       return displayVolume(value);
     case 'pcs':
-      return `${value} pcs`;
+      return `${value.toFixed(2)} pcs`;
     default:
+      if (typeof (value) === 'string') {
+        return `${parseFloat(value).toFixed(2)} ${siUnit}`;;
+      }
       // Fallback for any legacy / unknown unit — show raw
-      return `${value} ${siUnit}`;
+      return `${value.toFixed()} ${siUnit}`;
   }
 }
 

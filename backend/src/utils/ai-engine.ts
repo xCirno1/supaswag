@@ -14,6 +14,13 @@ interface AnalysisResult {
   safeFoods: any[];
   flaggedFoods: { item: any; reason: string }[];
   summary: string;
+  suggestedBreakfast: string;
+  suggestedBreakfastKcal: number;
+  suggestedLunch: string;
+  suggestedLunchKcal: number;
+  suggestedDinner: string;
+  suggestedDinnerKcal: number;
+  suggestedSide: string;
 }
 
 const apiKey = process.env.GROQ_API_KEY;
@@ -51,7 +58,6 @@ export async function analyzeDietBatchWithGroq(
   patients: any[],
   inventory: any[]
 ): Promise<AnalysisResult[]> {
-  // Build inventory list with human-readable quantities for the AI prompt
   const inventoryList = inventory.map(i => ({
     id: i.id,
     name: i.name,
@@ -75,13 +81,38 @@ export async function analyzeDietBatchWithGroq(
     Inventory (quantities in SI units — g for weight, ml for volume, pcs for count):
     ${JSON.stringify(inventoryList)}
 
+    For each patient, give all dangerous foods based on their medical conditions in the flaggedFoodIds field.
+
+    For each patient, suggest exactly three meals using ONLY their safe foods from the inventory.
+    - suggestedBreakfast: a realistic breakfast dish made from safe inventory items (e.g. "Scrambled Eggs with Spinach")
+    - suggestedLunch: a realistic lunch dish made from safe inventory items (e.g. "Grilled Salmon with Brown Rice")
+    - suggestedDinner: a realistic dinner dish made from safe inventory items (e.g. "Chicken Breast with Steamed Broccoli")
+    - suggestedSide: a realistic dinner side made from safe inventory items (e.g. "Ice Cream")
+    - suggestedBreakfastKcal: estimated kilocalories for the breakfast as a number
+    - suggestedLunchKcal: estimated kilocalories for the lunch as a number
+    - suggestedDinnerKcal: estimated kilocalories for the dinner as a number
+    Rules:
+    - kcal values must be realistic for a hospital portion (breakfast ~300-400, lunch ~400-550, dinner ~450-600)
+    - kcal values must be plain integers, no units
+    - Use actual inventory item names to compose the meal description
+    - Never use "Standard Breakfast/Lunch/Dinner" or any placeholder — always name a real dish
+    - Each meal must be different
+    - Never suggest a flagged food
+
     Respond ONLY with a valid JSON object:
     {
       "results": [
         {
           "patientId": "patient_id",
           "flaggedFoodIds": [{ "id": "item_id", "reason": "Clinical reason" }],
-          "summary": "Short clinical summary"
+          "summary": "Short clinical summary",
+          "suggestedBreakfast": "...",
+          "suggestedBreakfastKcal": 350,
+          "suggestedLunch": "...",
+          "suggestedLunchKcal": 480,
+          "suggestedDinner": "...",
+          "suggestedDinnerKcal": 520,
+          "suggestedSide": "..."
         }
       ]
     }
@@ -103,11 +134,18 @@ export async function analyzeDietBatchWithGroq(
   const { results } = JSON.parse(content);
 
   const patientMap = new Map(patients.map(p => [String(p.id), p]));
-
+  console.log(results);
   return results.map((r: any) => ({
     patient: patientMap.get(String(r.patientId)),
     ...partitionInventory(inventory, r.flaggedFoodIds ?? []),
     summary: r.summary ?? "AI Dietary Assessment complete.",
+    suggestedBreakfast: r.suggestedBreakfast,
+    suggestedBreakfastKcal: r.suggestedBreakfastKcal,
+    suggestedLunch: r.suggestedLunch,
+    suggestedLunchKcal: r.suggestedLunchKcal,
+    suggestedDinner: r.suggestedDinner,
+    suggestedDinnerKcal: r.suggestedDinnerKcal,
+    suggestedSide: r.suggestedSide,
   }));
 }
 

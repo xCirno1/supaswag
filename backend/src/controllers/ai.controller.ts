@@ -12,7 +12,6 @@ export const getPatientAnalysis = async (req: Request, res: Response) => {
   const { id } = req.params;
   const cacheKey = cacheKeyPatient(id);
 
-  // Check cache first
   const cached = cache.get(cacheKey);
   if (cached) {
     console.log(`[Cache HIT] ${cacheKey}`);
@@ -35,7 +34,6 @@ export const getPatientAnalysis = async (req: Request, res: Response) => {
 };
 
 export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
-  // Check cache first
   const cached = cache.get(CACHE_KEY_INVENTORY_NEEDS);
   if (cached) {
     console.log(`[Cache HIT] ${CACHE_KEY_INVENTORY_NEEDS}`);
@@ -83,7 +81,6 @@ export const getBulkInventoryNeeds = async (req: Request, res: Response) => {
 };
 
 export const getMealPlans = async (req: Request, res: Response) => {
-  // Check cache first
   const cached = cache.get(CACHE_KEY_MEAL_PLANS);
   if (cached) {
     console.log(`[Cache HIT] ${CACHE_KEY_MEAL_PLANS}`);
@@ -97,25 +94,19 @@ export const getMealPlans = async (req: Request, res: Response) => {
       pool.query('SELECT * FROM inventory'),
     ]);
 
-    // Single API call for all patients
     const analyses = await analyzeDietBatch(patientsRes.rows, inventoryRes.rows);
-
-    const mealPlans = analyses.map(({ patient, safeFoods, flaggedFoods }) => {
-      const proteins = safeFoods.filter(f =>
-        ['Salmon', 'Cheese', 'Peanut'].some(k => f.name.includes(k))
-      );
-      const sides = safeFoods.filter(f =>
-        ['Rice', 'Spinach', 'Bread'].some(k => f.name.includes(k))
-      );
-
-      return {
-        patient: { id: patient.id, name: patient.name, room: patient.room },
-        protein: proteins[0]?.name || 'Standard Protein',
-        side: sides[0]?.name || 'Standard Side',
-        flags: flaggedFoods,
-      };
-    });
-
+    console.log(analyses)
+    const mealPlans = analyses.map(({ patient, flaggedFoods, suggestedBreakfast, suggestedBreakfastKcal, suggestedLunch, suggestedLunchKcal, suggestedDinner, suggestedDinnerKcal, suggestedSide }) => ({
+      patient: { id: patient.id, name: patient.name, room: patient.room },
+      breakfast: suggestedBreakfast,
+      breakfastKcal: suggestedBreakfastKcal,
+      lunch: suggestedLunch,
+      lunchKcal: suggestedLunchKcal,
+      dinner: suggestedDinner,
+      dinnerKcal: suggestedDinnerKcal,
+      side: suggestedSide,
+      flags: flaggedFoods,
+    }));
     cache.set(CACHE_KEY_MEAL_PLANS, mealPlans);
     res.status(200).json(mealPlans);
   } catch (error) {

@@ -155,7 +155,12 @@ export default function MealPlansPage() {
           ) : (() => {
             const initials = selected.patient.name.split(' ').map(n => n[0]).join('').slice(0, 2);
             const hasFlags = selected.flags.length > 0;
-            const meals = generateMealSlots(selected.protein, selected.side, energyUnit);
+            const meals = [
+              { time: MEAL_TIMES[0], icon: MEAL_ICONS[0], name: selected.breakfast, desc: `Served with ${selected.side}`, cals: displayEnergy(selected.breakfastKcal, energyUnit) },
+              { time: MEAL_TIMES[1], icon: MEAL_ICONS[1], name: selected.lunch, desc: `Served with ${selected.side}`, cals: displayEnergy(selected.lunchKcal, energyUnit) },
+              { time: MEAL_TIMES[2], icon: MEAL_ICONS[2], name: selected.dinner, desc: `Served with ${selected.side}`, cals: displayEnergy(selected.dinnerKcal, energyUnit) },
+            ];
+
             return (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -208,9 +213,8 @@ export default function MealPlansPage() {
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#2D6A4F', letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Note</span>
                   </div>
                   <p style={{ fontSize: 13, color: '#1A4731', lineHeight: 1.6 }}>
-                    Plan assigned from safe-food inventory. EHR contraindications applied. Protein: <strong>{selected.protein}</strong>, Side: <strong>{selected.side}</strong>.
-                    {hasFlags && ` ${selected.flags.length} item(s) flagged and excluded from this plan.`}
-                  </p>
+                    Plan assigned from safe-food inventory. EHR contraindications applied. Side: <strong>{selected.side}</strong>.
+                    {hasFlags && ` ${selected.flags.length} item(s) flagged and excluded from this plan.`}                  </p>
                 </div>
               </>
             );

@@ -160,7 +160,7 @@ export default function InventoryPage() {
           ) : (() => {
             const isOrder = selected.status === 'ORDER NOW';
             const demand = Math.round(selected.requested * 7);
-            const orderQty = Math.max(0, demand - selected.stock);
+            const orderQty = parseFloat(Math.max(0, demand - selected.stock).toFixed(2));
             const pct = demand > 0 ? Math.min(100, Math.round((selected.stock / demand) * 100)) : 100;
             const barColor = pct > 60 ? '#52B788' : pct > 25 ? '#EF9F27' : '#E24B4A';
 

@@ -59,7 +59,12 @@ export interface PatientAnalysis {
 
 export interface MealPlan {
   patient: { id: string; name: string; room: string };
-  protein: string;
+  breakfast: string;
+  breakfastKcal: number;
+  lunch: string;
+  lunchKcal: number;
+  dinner: string;
+  dinnerKcal: number;
   side: string;
   flags: FlaggedFood[];
 }
