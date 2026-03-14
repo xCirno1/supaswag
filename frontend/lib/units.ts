@@ -50,7 +50,7 @@ export function displayVolume(ml: number): string {
  */
 export function displayEnergy(kcal: number, unit: EnergyUnit): string {
   const converted = kcal * ENERGY_FACTORS[unit];
-  return `${Math.round(converted)} ${unit}`;
+  return converted ? `${Math.round(converted)} ${unit}` : `- kcal`;
 }
 
 /**

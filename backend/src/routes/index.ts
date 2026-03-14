@@ -16,7 +16,6 @@ router.post('/auth/login', authController.login);
 router.post('/auth/logout', authController.logout);
 router.get('/auth/me', authController.me);
 
-
 // ==========================================
 // PATIENTS API
 // ==========================================
@@ -25,6 +24,7 @@ router.get('/patients/:id', patientController.getPatientById);
 router.post('/patients', patientController.addPatient);
 router.delete('/patients/:id', patientController.removePatient);
 router.patch('/patients/:id/priority', patientController.updatePatientPriority);
+router.patch('/patients/:id/bmi', patientController.updatePatientBMI);
 
 // ==========================================
 // INVENTORY API

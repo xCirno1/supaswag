@@ -8,6 +8,8 @@ export async function addPatientAction(data: {
   medications?: string[];
   allergies?: string[];
   priority?: Priority;
+  height_cm?: number | null;
+  weight_kg?: number | null;
 }) {
   await createPatient({
     name: data.name,
@@ -17,6 +19,8 @@ export async function addPatientAction(data: {
     medications: data.medications?.length ? data.medications : ['None'],
     allergies: data.allergies?.length ? data.allergies : ['None'],
     priority: data.priority ?? 0,
+    height_cm: data.height_cm ?? null,
+    weight_kg: data.weight_kg ?? null,
   });
 }
 
@@ -36,11 +40,10 @@ export async function addInventoryAction(data: {
   stock: number;
 }) {
   if (!data.name || !data.unit || isNaN(data.stock)) return;
-
   try {
     await createInventoryItem({ name: data.name, unit: data.unit, stock: data.stock, tags: [] });
   } catch (err) {
-    console.warn("Backend missing POST /inventory endpoint. Ignoring creation locally.");
+    console.warn('Backend missing POST /inventory endpoint. Ignoring creation locally.');
   }
 }
 

@@ -8,32 +8,6 @@ import { Sparkles, AlertTriangle } from 'lucide-react';
 const MEAL_ICONS = ['🌅', '☀️', '🌙'];
 const MEAL_TIMES = ['Breakfast · 7:30', 'Lunch · 12:00', 'Dinner · 17:30'];
 
-const MEAL_KCAL = [320, 410, 480] as const;
-
-function generateMealSlots(
-  protein: string,
-  side: string,
-  energyUnit: 'kcal' | 'kJ',
-) {
-  return [
-    {
-      time: MEAL_TIMES[0], icon: MEAL_ICONS[0],
-      name: 'Morning Nutrition', desc: `Balanced start with ${side}`,
-      cals: displayEnergy(MEAL_KCAL[0], energyUnit),
-    },
-    {
-      time: MEAL_TIMES[1], icon: MEAL_ICONS[1],
-      name: protein, desc: `Served with ${side}`,
-      cals: displayEnergy(MEAL_KCAL[1], energyUnit),
-    },
-    {
-      time: MEAL_TIMES[2], icon: MEAL_ICONS[2],
-      name: `${protein} (dinner)`, desc: `Light evening meal with ${side}`,
-      cals: displayEnergy(MEAL_KCAL[2], energyUnit),
-    },
-  ];
-}
-
 export default function MealPlansPage() {
   const { energyUnit } = useSettings();
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
@@ -54,8 +28,9 @@ export default function MealPlansPage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap');
-        @keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
         @keyframes chipPop { 0%{opacity:0;transform:scale(0.85)} 70%{transform:scale(1.05)} 100%{opacity:1;transform:scale(1)} }
+        @keyframes reasonIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
 
         .topbar { display:flex; align-items:center; gap:12px; padding:14px 24px; border-bottom:1px solid #E5E0D6; background:#fff; flex-shrink:0; }
         .topbar-title { font-family:'Fraunces',serif; font-size:18px; font-weight:500; color:#1A1A18; flex:1; }
@@ -63,22 +38,22 @@ export default function MealPlansPage() {
         .content-area { display:flex; flex:1; overflow:hidden; }
 
         .patient-list { width:260px; border-right:1px solid #E5E0D6; overflow-y:auto; background:#fff; flex-shrink:0; }
-        .list-header { padding:14px 16px 8px; display:flex; align-items:center; justify-content:space-between; }
+        .list-header  { padding:14px 16px 8px; display:flex; align-items:center; justify-content:space-between; }
         .list-header-label { font-size:11px; font-weight:500; color:#6B6860; letter-spacing:0.06em; text-transform:uppercase; }
 
         .patient-card { padding:10px 16px; border-bottom:1px solid #E5E0D6; cursor:pointer; transition:background 0.1s; position:relative; }
-        .patient-card:hover { background:#F9F6F1; }
+        .patient-card:hover  { background:#F9F6F1; }
         .patient-card.active { background:#E1F5EE; }
-        .pc-left { position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 2px 2px 0; }
-        .pc-top { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+        .pc-left   { position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 2px 2px 0; }
+        .pc-top    { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
         .pc-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:500; flex-shrink:0; }
-        .pc-name { font-size:13px; font-weight:500; color:#1A1A18; flex:1; }
-        .pc-sub { font-size:11px; color:#6B6860; display:flex; align-items:center; gap:5px; }
+        .pc-name   { font-size:13px; font-weight:500; color:#1A1A18; flex:1; }
+        .pc-sub    { font-size:11px; color:#6B6860; display:flex; align-items:center; gap:5px; }
 
         .detail-pane { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:16px; }
-        .info-card { background:#fff; border:1px solid #E5E0D6; border-radius:12px; padding:16px; }
+        .info-card   { background:#fff; border:1px solid #E5E0D6; border-radius:12px; padding:16px; }
         .info-card-label { font-size:11px; font-weight:500; color:#6B6860; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px; }
-        .section-title { font-family:'Fraunces',serif; font-size:16px; font-weight:500; color:#1A1A18; margin-bottom:12px; }
+        .section-title   { font-family:'Fraunces',serif; font-size:16px; font-weight:500; color:#1A1A18; margin-bottom:12px; }
 
         .meal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
         .meal-card { background:#F9F6F1; border-radius:10px; padding:12px; border:1px solid #E5E0D6; }
@@ -89,11 +64,29 @@ export default function MealPlansPage() {
 
         .flag-pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:#B5641B; background:#FAEEDA; border:1px solid #f5d5b5; border-radius:20px; padding:3px 9px; margin:3px; }
 
+        /* Reason box */
+        .reason-box {
+          display:flex; gap:10px; align-items:flex-start;
+          background:#F0FAF4; border:1px solid #b2ddb2; border-radius:10px;
+          padding:12px 14px;
+          animation: reasonIn 0.35s ease forwards;
+        }
+        .reason-icon-wrap {
+          width:28px; height:28px; border-radius:50%; flex-shrink:0;
+          background:rgba(45,106,79,0.1);
+          display:flex; align-items:center; justify-content:center;
+        }
+        .reason-text {
+          font-size:13px; color:#1A4731; line-height:1.65;
+          font-style:italic;
+        }
+
         .right-panel { width:220px; border-left:1px solid #E5E0D6; overflow-y:auto; background:#fff; flex-shrink:0; padding:16px; }
-        .rp-label { font-size:11px; font-weight:500; color:#6B6860; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px; }
+        .rp-label   { font-size:11px; font-weight:500; color:#6B6860; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px; }
         .rp-section { margin-bottom:20px; }
       `}</style>
 
+      {/* Topbar */}
       <div className="topbar">
         <div className="topbar-title">Supa<span>care</span></div>
         <span style={{ fontSize: 12, color: '#6B6860' }}>Today · AI-generated meal plans</span>
@@ -163,6 +156,7 @@ export default function MealPlansPage() {
 
             return (
               <>
+                {/* Patient header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: hasFlags ? '#FAEEDA' : '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 500, color: hasFlags ? '#B5641B' : '#0F6E56', flexShrink: 0 }}>
                     {initials}
@@ -176,7 +170,7 @@ export default function MealPlansPage() {
                   </span>
                 </div>
 
-                {/* Meal grid — energy values now use the user's preferred unit */}
+                {/* Meal grid */}
                 <div>
                   <div className="section-title">Daily Meal Plan</div>
                   <div className="meal-grid">
@@ -190,6 +184,18 @@ export default function MealPlansPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* ── AI Meal Plan Reason ── */}
+                {selected.mealPlanReason && (
+                  <div className="reason-box">
+                    <div className="reason-icon-wrap">
+                      <Sparkles style={{ width: 13, height: 13, color: '#2D6A4F' }} />
+                    </div>
+                    <p className="reason-text">
+                      {selected.mealPlanReason}
+                    </p>
+                  </div>
+                )}
 
                 {/* Flagged foods */}
                 {selected.flags.length > 0 && (
@@ -214,7 +220,8 @@ export default function MealPlansPage() {
                   </div>
                   <p style={{ fontSize: 13, color: '#1A4731', lineHeight: 1.6 }}>
                     Plan assigned from safe-food inventory. EHR contraindications applied. Side: <strong>{selected.side}</strong>.
-                    {hasFlags && ` ${selected.flags.length} item(s) flagged and excluded from this plan.`}                  </p>
+                    {hasFlags && ` ${selected.flags.length} item(s) flagged and excluded from this plan.`}
+                  </p>
                 </div>
               </>
             );
@@ -257,11 +264,7 @@ export default function MealPlansPage() {
               </div>
             ) : (
               mealPlans.filter(m => m.flags.length > 0).map(plan => (
-                <div
-                  key={plan.patient.id}
-                  onClick={() => setSelected(plan)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #E5E0D6', cursor: 'pointer' }}
-                >
+                <div key={plan.patient.id} onClick={() => setSelected(plan)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #E5E0D6', cursor: 'pointer' }}>
                   <AlertTriangle style={{ width: 12, height: 12, color: '#B5641B', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 11, fontWeight: 500 }}>{plan.patient.name}</div>
@@ -275,11 +278,7 @@ export default function MealPlansPage() {
           <div className="rp-section">
             <div className="rp-label">All Plans</div>
             {mealPlans.map(plan => (
-              <div
-                key={plan.patient.id}
-                onClick={() => setSelected(plan)}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0', borderBottom: '1px solid #E5E0D6', cursor: 'pointer', background: selected?.patient.id === plan.patient.id ? 'rgba(82,183,136,0.07)' : 'transparent' }}
-              >
+              <div key={plan.patient.id} onClick={() => setSelected(plan)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0', borderBottom: '1px solid #E5E0D6', cursor: 'pointer', background: selected?.patient.id === plan.patient.id ? 'rgba(82,183,136,0.07)' : 'transparent' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: plan.flags.length > 0 ? '#EF9F27' : '#52B788', flexShrink: 0 }} />
                 <span style={{ fontSize: 11, fontWeight: selected?.patient.id === plan.patient.id ? 500 : 400, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {plan.patient.name}
@@ -289,7 +288,8 @@ export default function MealPlansPage() {
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
-}
+} 
