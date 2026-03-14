@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../db';
 import { cache } from '../utils/cache';
+import { normaliseUnit, toSIStock, isValidSIUnit } from '../utils/units';
 
 export const getInventory = async (req: Request, res: Response) => {
   try {
@@ -15,10 +16,20 @@ export const updateStock = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { stock } = req.body;
+
+    if (typeof stock !== 'number' || stock < 0) {
+      return res.status(400).json({ error: 'stock must be a non-negative number' });
+    }
+
+    // Stock is always stored in SI, the frontend sends SI values directly.
     const result = await pool.query(
       'UPDATE inventory SET stock = $1 WHERE id = $2 RETURNING *',
-      [stock, id]
+      [Math.round(stock), id]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
 
     cache.invalidate('analysis:inventory-needs');
     cache.invalidate('analysis:meal-plans');
@@ -32,14 +43,22 @@ export const updateStock = async (req: Request, res: Response) => {
 
 export const createInventoryItem = async (req: Request, res: Response) => {
   try {
-    const { name, unit, stock, tags } = req.body;
+    const { name, unit, stock, tags, inputUnit } = req.body;
 
     if (!name || !unit || stock === undefined) {
       return res.status(400).json({ error: 'name, unit, and stock are required' });
     }
 
-    // Use a single atomic INSERT that computes the next ID in one statement,
-    // avoiding the read-then-write race when multiple items are inserted concurrently.
+    const siUnit = normaliseUnit(unit);
+
+    const rawInputUnit = inputUnit ?? unit;
+    const siStock = toSIStock(Number(stock), rawInputUnit);
+
+    if (!isValidSIUnit(siUnit)) {
+      // Should never happen given normaliseUnit's fallback, but belt-and-braces.
+      return res.status(400).json({ error: `unit must be one of: g, ml, pcs` });
+    }
+
     const result = await pool.query(
       `INSERT INTO inventory (id, name, unit, stock, tags)
        SELECT
@@ -47,12 +66,12 @@ export const createInventoryItem = async (req: Request, res: Response) => {
          $1, $2, $3, $4
        FROM inventory
        RETURNING *`,
-      [name, unit, stock ?? 0, tags ?? []]
+      [name, siUnit, siStock, tags ?? []]
     );
 
     cache.invalidate('analysis:inventory-needs');
     cache.invalidate('analysis:meal-plans');
-    console.log(`[Cache BUST] New inventory item added: ${result.rows[0].id}`);
+    console.log(`[Cache BUST] New inventory item added: ${result.rows[0].id} (${siStock} ${siUnit})`);
 
     res.status(201).json(result.rows[0]);
   } catch (error) {

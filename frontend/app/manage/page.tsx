@@ -1,6 +1,8 @@
 "use client"
 import { useState, useEffect, useMemo } from 'react';
 import { getPatients, getInventory, getMedications, getAllergies, updatePatientPriority, InventoryItem, Patient, Priority, PRIORITY_CONFIG } from '@/lib/api';
+import { useSettings } from '@/lib/settings-context';
+import { displayStock, type SIUnit } from '@/lib/units';
 import { addPatientAction, removePatientAction, updateStockAction, addInventoryAction, addMedicationAction, addAllergyAction } from './actions';
 import { Trash2, Plus, Save, Search, X, SlidersHorizontal } from 'lucide-react';
 
@@ -27,6 +29,13 @@ const P = {
     leftBorder: '#ef4444', dot: '#ef4444', ring: 'rgba(239,68,68,0.4)',
   },
 } as const;
+
+// ─── SI unit options for the "Add Item" form ─────────────────────────────────
+const SI_UNIT_OPTIONS: { value: SIUnit; label: string; hint: string }[] = [
+  { value: 'g', label: 'g — grams', hint: 'For solids: meat, grains, vegetables' },
+  { value: 'ml', label: 'ml — millilitres', hint: 'For liquids: milk, juice, oil' },
+  { value: 'pcs', label: 'pcs — pieces', hint: 'For countables: eggs, bread rolls' },
+];
 
 interface Filters {
   search: string;
@@ -130,6 +139,8 @@ function ActiveChip({ label, color, textColor, borderColor, onRemove }: {
 }
 
 export default function ManagePage() {
+  const { weightUnit } = useSettings();
+
   const [patients, setPatients] = useState<Patient[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [medications, setMedications] = useState<string[]>(['None']);
@@ -157,7 +168,6 @@ export default function ManagePage() {
 
   useEffect(() => { refresh(); }, []);
 
-  // Derived filter options from real patient data
   const allAllergies = useMemo(() => {
     const s = new Set<string>();
     patients.forEach(p => (p.allergies || []).forEach(a => { if (a !== 'None') s.add(a); }));
@@ -176,7 +186,6 @@ export default function ManagePage() {
     return c;
   }, [patients]);
 
-  // Filtered + sorted
   const filteredPatients = useMemo(() => {
     let r = [...patients];
     const q = filters.search.toLowerCase().trim();
@@ -204,7 +213,6 @@ export default function ManagePage() {
   const clearFilters = () =>
     setFilters({ search: '', priorities: new Set(), allergies: new Set(), medications: new Set() });
 
-  // Handlers
   const handleAddPatient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -225,6 +233,7 @@ export default function ManagePage() {
   const handleUpdateStock = async (id: string, e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    // Stock input is always in SI (the label tells the user which unit)
     await updateStockAction(id, parseInt(fd.get('stock') as string, 10));
     refresh();
   };
@@ -234,7 +243,8 @@ export default function ManagePage() {
     const form = e.currentTarget;
     const fd = new FormData(form);
     await addInventoryAction({
-      name: fd.get('name') as string, unit: fd.get('unit') as string,
+      name: fd.get('name') as string,
+      unit: fd.get('unit') as string,   // already SI from the select
       stock: parseInt(fd.get('stock') as string, 10),
     });
     form.reset(); refresh();
@@ -257,7 +267,7 @@ export default function ManagePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F5F0] font-['DM_Sans',sans-serif]">
+    <div style={{ height: '100%', overflowY: 'auto' }} className="bg-[#F7F5F0] ...">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap');
 
@@ -311,7 +321,18 @@ export default function ManagePage() {
         .field-input:focus { border-color:#a8a29e; background:#fff; }
         .field-input::placeholder { color:#c4bfba; }
 
-        /* Priority pills — form selector */
+        .unit-select {
+          width:100%; border:1px solid #e7e5e4; padding:.5rem .75rem;
+          border-radius:2px; font-size:.8125rem; font-family:inherit;
+          color:#1c1917; background:#fafaf9; transition:border-color .15s;
+          outline:none; box-sizing:border-box; cursor:pointer;
+          appearance:none;
+          background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+          background-repeat:no-repeat; background-position:right .75rem center;
+          padding-right:2rem;
+        }
+        .unit-select:focus { border-color:#a8a29e; background-color:#fff; }
+
         .p-pill {
           display:inline-flex; align-items:center; gap:6px;
           font-size:.66rem; letter-spacing:.07em; text-transform:uppercase;
@@ -322,7 +343,6 @@ export default function ManagePage() {
         .p-pill.sel { opacity:1; transform:scale(1); }
         .p-pill:hover:not(.sel) { opacity:.65; transform:scale(.98); }
 
-        /* Roster rows */
         .roster-row {
           display:flex; align-items:center; justify-content:space-between;
           padding:.9rem 1rem .9rem 1.1rem;
@@ -331,7 +351,6 @@ export default function ManagePage() {
         }
         .roster-row:last-child { border-bottom:none; }
 
-        /* Left accent bar */
         .roster-row::before {
           content:''; position:absolute; left:0; top:8px; bottom:8px;
           width:3px; border-radius:0 2px 2px 0; transition:all .2s;
@@ -350,7 +369,6 @@ export default function ManagePage() {
         .roster-row.p3 { background:rgba(239,68,68,.035); }
         .roster-row.p3:hover { background:rgba(239,68,68,.06); }
 
-        /* Filter panel */
         .filter-panel {
           background:#fff; border:1px solid rgba(28,25,23,.1); border-radius:4px;
           padding:1.1rem 1.4rem; margin-bottom:.6rem;
@@ -373,6 +391,12 @@ export default function ManagePage() {
         }
         .search-input:focus { border-color:#a8a29e; background:#fff; }
         .search-input::placeholder { color:#c4bfba; }
+
+        .unit-badge {
+          font-size:.58rem; letter-spacing:.08em; text-transform:uppercase;
+          font-weight:600; padding:2px 6px; border-radius:4px;
+          background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;
+        }
       `}</style>
 
       <div className="max-w-5xl mx-auto px-8 py-12">
@@ -423,7 +447,7 @@ export default function ManagePage() {
           ))}
         </div>
 
-        {/* ── Two-column layout ──────────────────────────────────────────── */}
+        {/* ── Two-column layout ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
 
           {/* Admit Patient form */}
@@ -445,7 +469,7 @@ export default function ManagePage() {
                 </div>
               </div>
 
-              {/* Priority selector — bold pills */}
+              {/* Priority selector */}
               <div>
                 <label className="field-label">Priority Level</label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -579,10 +603,9 @@ export default function ManagePage() {
               )}
             </div>
 
-            {/* Expandable filter panel */}
+            {/* Filter panel */}
             {filtersOpen && (
               <div className="filter-panel">
-                {/* Priority */}
                 <div style={{ marginBottom: '0.9rem' }}>
                   <span className="filter-section-label">By priority</span>
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -599,7 +622,6 @@ export default function ManagePage() {
                   </div>
                 </div>
 
-                {/* Medications */}
                 {allMedications.length > 0 && (
                   <div style={{ marginBottom: '0.9rem' }}>
                     <span className="filter-section-label">By medication</span>
@@ -616,7 +638,6 @@ export default function ManagePage() {
                   </div>
                 )}
 
-                {/* Allergies */}
                 {allAllergies.length > 0 && (
                   <div>
                     <span className="filter-section-label">By allergy</span>
@@ -665,7 +686,7 @@ export default function ManagePage() {
             )}
 
             {/* Roster list */}
-            <div className="bg-white border border-stone-200/60 rounded-sm shadow-sm overflow-hidden">
+            <div className="bg-white border border-stone-200/60 rounded-sm shadow-sm">
               {filteredPatients.length === 0 ? (
                 <div style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
                   <p className="text-stone-400 text-sm">
@@ -737,7 +758,10 @@ export default function ManagePage() {
 
         {/* Inventory */}
         <div>
-          <h2 className="font-['DM_Serif_Display',serif] text-xl text-stone-900 mb-5">Inventory Stock</h2>
+          <h2 className="font-['DM_Serif_Display',serif] text-xl text-stone-900 mb-1">Inventory Stock</h2>
+          <p className="text-stone-400 text-xs mb-5">
+            All quantities stored in SI units (g / ml / pcs). Displayed in your preferred unit: <strong>{weightUnit}</strong>.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {inventory.map(item => (
               <form key={`f-${item.id}`} onSubmit={e => handleUpdateStock(item.id, e)} className="bg-white p-5 border border-stone-200/60 rounded-sm shadow-sm flex flex-col gap-4">
@@ -746,11 +770,28 @@ export default function ManagePage() {
                     <div className="font-medium text-stone-900 text-sm">{item.name}</div>
                     <div className="text-[0.65rem] tracking-wider uppercase text-stone-400 mt-1">{item.id}</div>
                   </div>
-                  <span className="text-[0.65rem] tracking-wider uppercase bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">{item.unit}</span>
+                  {/* Show SI unit as a badge */}
+                  <span className="unit-badge">{item.unit}</span>
                 </div>
+
+                {/* Show current stock in user's preferred display unit */}
+                <div style={{ fontSize: '0.72rem', color: '#78716c' }}>
+                  Current: <strong style={{ color: '#1c1917' }}>{displayStock(item.stock, item.unit, weightUnit)}</strong>
+                </div>
+
                 <div className="flex gap-2 items-center mt-auto">
                   <div className="relative flex-1">
-                    <input type="number" name="stock" defaultValue={item.stock} className="field-input" />
+                    <input
+                      type="number"
+                      name="stock"
+                      defaultValue={item.stock}
+                      className="field-input"
+                      title={`Enter stock in ${item.unit} (SI)`}
+                    />
+                    <span style={{
+                      position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                      fontSize: '0.65rem', color: '#a8a29e', fontWeight: 600, pointerEvents: 'none',
+                    }}>{item.unit}</span>
                   </div>
                   <button type="submit" className="bg-stone-100 hover:bg-stone-200 text-stone-700 p-2.5 rounded-sm transition-colors" title="Save Stock">
                     <Save className="w-4 h-4" />
@@ -758,6 +799,8 @@ export default function ManagePage() {
                 </div>
               </form>
             ))}
+
+            {/* Add new inventory item */}
             <form onSubmit={handleAddInventory} className="inv-add-card">
               <div className="flex items-center gap-2 mb-1">
                 <Plus className="w-3.5 h-3.5 text-stone-400" />
@@ -767,16 +810,29 @@ export default function ManagePage() {
                 <label className="field-label">Item Name</label>
                 <input name="name" type="text" required className="field-input" placeholder="e.g. Olive Oil" />
               </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="field-label">Unit</label>
-                  <input name="unit" type="text" required className="field-input" placeholder="ml, g, pkg…" />
-                </div>
-                <div className="flex-1">
-                  <label className="field-label">Stock</label>
-                  <input name="stock" type="number" required min="0" className="field-input" placeholder="0" />
+
+              {/* Unit is now a restricted dropdown — only SI units allowed */}
+              <div>
+                <label className="field-label">Unit (SI)</label>
+                <select name="unit" required className="unit-select" defaultValue="g">
+                  {SI_UNIT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '0.62rem', color: '#a8a29e', marginTop: 4 }}>
+                  {SI_UNIT_OPTIONS.map(opt => (
+                    <span key={opt.value} style={{ marginRight: 8 }}>
+                      <strong>{opt.value}</strong>: {opt.hint}
+                    </span>
+                  ))}
                 </div>
               </div>
+
+              <div>
+                <label className="field-label">Initial Stock (in selected SI unit)</label>
+                <input name="stock" type="number" required min="0" className="field-input" placeholder="0" />
+              </div>
+
               <button type="submit" className="flex items-center justify-center gap-2 w-full mt-1 bg-stone-900 text-stone-50 py-2.5 text-[0.68rem] tracking-widest uppercase font-medium rounded-sm hover:bg-stone-800 transition-colors">
                 <Plus className="w-3.5 h-3.5" /> Add Item
               </button>

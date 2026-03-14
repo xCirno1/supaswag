@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import Groq from "groq-sdk";
+import { formatForAI } from './units';
 
 dotenv.config();
 
@@ -23,30 +24,8 @@ You have comprehensive knowledge of:
 - Drug-food interactions (e.g. Warfarin + Vitamin K, MAOIs + Tyramine, ACE inhibitors + Potassium)
 - Common food allergies and cross-reactivity
 - Disease-specific dietary restrictions (e.g. diabetes, renal disease, celiac)
+All inventory quantities are stored in SI units: weight in grams (g), volume in millilitres (ml), count in pieces (pcs).
 Always output valid JSON only.`;
-
-function buildPrompt(patient: any, inventory: any[]): string {
-  return `
-    Evaluate this patient's dietary restrictions against the provided inventory.
-    
-    Patient:
-    - Name: ${patient.name}
-    - Conditions: ${(patient.conditions ?? []).join(', ') || 'None'}
-    - Medications: ${(patient.medications ?? []).join(', ') || 'None'}
-    - Allergies: ${(patient.allergies ?? []).join(', ') || 'None'}
-
-    Inventory:
-    ${JSON.stringify(inventory.map(i => ({ id: i.id, name: i.name, tags: i.tags })))}
-
-    Respond ONLY with a valid JSON object in this exact shape:
-    {
-      "flaggedFoodIds": [
-        { "id": "item_id", "reason": "Clinical reason" }
-      ],
-      "summary": "Short clinical summary"
-    }
-  `;
-}
 
 function partitionInventory(
   inventory: any[],
@@ -72,11 +51,17 @@ export async function analyzeDietBatchWithGroq(
   patients: any[],
   inventory: any[]
 ): Promise<AnalysisResult[]> {
-  const inventoryList = inventory.map(i => ({ id: i.id, name: i.name, tags: i.tags }));
+  // Build inventory list with human-readable quantities for the AI prompt
+  const inventoryList = inventory.map(i => ({
+    id: i.id,
+    name: i.name,
+    quantity: formatForAI(i.stock, i.unit),
+    tags: i.tags,
+  }));
 
   const prompt = `
-    You are a clinical AI dietitian. Evaluate each patient's dietary restrictions against the inventory. DO NOT mention
-    the blocked foods if it does not present in the case.
+    You are a clinical AI dietitian. Evaluate each patient's dietary restrictions against the inventory.
+    DO NOT mention blocked foods if they do not present in the case.
 
     Patients:
     ${JSON.stringify(patients.map(p => ({
@@ -87,7 +72,7 @@ export async function analyzeDietBatchWithGroq(
     allergies: p.allergies ?? [],
   })))}
 
-    Inventory:
+    Inventory (quantities in SI units — g for weight, ml for volume, pcs for count):
     ${JSON.stringify(inventoryList)}
 
     Respond ONLY with a valid JSON object:

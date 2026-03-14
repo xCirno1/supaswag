@@ -1,20 +1,41 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { getMealPlans, MealPlan } from '@/lib/api';
+import { useSettings } from '@/lib/settings-context';
+import { displayEnergy } from '@/lib/units';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 
 const MEAL_ICONS = ['🌅', '☀️', '🌙'];
 const MEAL_TIMES = ['Breakfast · 7:30', 'Lunch · 12:00', 'Dinner · 17:30'];
 
-function generateMealSlots(protein: string, side: string) {
+const MEAL_KCAL = [320, 410, 480] as const;
+
+function generateMealSlots(
+  protein: string,
+  side: string,
+  energyUnit: 'kcal' | 'kJ',
+) {
   return [
-    { time: MEAL_TIMES[0], icon: MEAL_ICONS[0], name: 'Morning Nutrition', desc: `Balanced start with ${side}`, cals: '320 kcal' },
-    { time: MEAL_TIMES[1], icon: MEAL_ICONS[1], name: protein, desc: `Served with ${side}`, cals: '410 kcal' },
-    { time: MEAL_TIMES[2], icon: MEAL_ICONS[2], name: `${protein} (dinner)`, desc: `Light evening meal with ${side}`, cals: '480 kcal' },
+    {
+      time: MEAL_TIMES[0], icon: MEAL_ICONS[0],
+      name: 'Morning Nutrition', desc: `Balanced start with ${side}`,
+      cals: displayEnergy(MEAL_KCAL[0], energyUnit),
+    },
+    {
+      time: MEAL_TIMES[1], icon: MEAL_ICONS[1],
+      name: protein, desc: `Served with ${side}`,
+      cals: displayEnergy(MEAL_KCAL[1], energyUnit),
+    },
+    {
+      time: MEAL_TIMES[2], icon: MEAL_ICONS[2],
+      name: `${protein} (dinner)`, desc: `Light evening meal with ${side}`,
+      cals: displayEnergy(MEAL_KCAL[2], energyUnit),
+    },
   ];
 }
 
 export default function MealPlansPage() {
+  const { energyUnit } = useSettings();
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [selected, setSelected] = useState<MealPlan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -134,7 +155,7 @@ export default function MealPlansPage() {
           ) : (() => {
             const initials = selected.patient.name.split(' ').map(n => n[0]).join('').slice(0, 2);
             const hasFlags = selected.flags.length > 0;
-            const meals = generateMealSlots(selected.protein, selected.side);
+            const meals = generateMealSlots(selected.protein, selected.side, energyUnit);
             return (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -150,7 +171,7 @@ export default function MealPlansPage() {
                   </span>
                 </div>
 
-                {/* Meal grid */}
+                {/* Meal grid — energy values now use the user's preferred unit */}
                 <div>
                   <div className="section-title">Daily Meal Plan</div>
                   <div className="meal-grid">
@@ -216,6 +237,10 @@ export default function MealPlansPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                 <span style={{ color: '#6B6860' }}>Total flags</span>
                 <span style={{ fontWeight: 600, color: '#A32D2D' }}>{flaggedCount}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, borderTop: '1px solid #E5E0D6', paddingTop: 6, marginTop: 2 }}>
+                <span style={{ color: '#6B6860' }}>Energy unit</span>
+                <span style={{ fontWeight: 600, color: '#0F6E56' }}>{energyUnit}</span>
               </div>
             </div>
           </div>

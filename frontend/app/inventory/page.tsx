@@ -1,10 +1,13 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { getInventoryNeeds, updateInventoryStock, InventoryNeed } from '@/lib/api';
+import { useSettings } from '@/lib/settings-context';
+import { displayStock } from '@/lib/units';
 import { Check, X } from 'lucide-react';
 import BulkPlanButton from './BulkPlanButton';
 
 export default function InventoryPage() {
+  const { weightUnit } = useSettings();
   const [inventoryData, setInventoryData] = useState<InventoryNeed[]>([]);
   const [selected, setSelected] = useState<InventoryNeed | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +18,11 @@ export default function InventoryPage() {
 
   const loadInventory = () =>
     getInventoryNeeds()
-      .then(data => { setInventoryData(data); if (data.length > 0) setSelected(prev => prev ? (data.find(d => d.id === prev.id) ?? data[0]) : data[0]); })
+      .then(data => {
+        setInventoryData(data);
+        if (data.length > 0)
+          setSelected(prev => prev ? (data.find(d => d.id === prev.id) ?? data[0]) : data[0]);
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
 
@@ -128,7 +135,9 @@ export default function InventoryPage() {
                   <div className="inv-card-left" style={{ background: isOrder ? '#E24B4A' : '#52B788' }} />
                   <div className="inv-card-name">{item.name}</div>
                   <div className="inv-card-row">
-                    <span style={{ fontSize: 11, color: '#6B6860' }}>{item.stock} {item.unit}</span>
+                    <span style={{ fontSize: 11, color: '#6B6860' }}>
+                      {displayStock(item.stock, item.unit, weightUnit)}
+                    </span>
                     <div className="stock-bar-wrap">
                       <div className="stock-bar" style={{ width: `${pct}%`, background: barColor }} />
                     </div>
@@ -154,6 +163,12 @@ export default function InventoryPage() {
             const orderQty = Math.max(0, demand - selected.stock);
             const pct = demand > 0 ? Math.min(100, Math.round((selected.stock / demand) * 100)) : 100;
             const barColor = pct > 60 ? '#52B788' : pct > 25 ? '#EF9F27' : '#E24B4A';
+
+            // Human-readable display values
+            const stockDisplay = displayStock(selected.stock, selected.unit, weightUnit);
+            const demandDisplay = displayStock(demand, selected.unit, weightUnit);
+            const orderDisplay = displayStock(orderQty, selected.unit, weightUnit);
+
             return (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -171,18 +186,18 @@ export default function InventoryPage() {
                 <div className="stat-row-h">
                   <div className="stat-box">
                     <div className="stat-box-label">Current Stock</div>
-                    <div className="stat-box-value">{selected.stock}</div>
-                    <div className="stat-box-sub">{selected.unit}</div>
+                    <div className="stat-box-value" style={{ fontSize: '1.3rem' }}>{stockDisplay}</div>
+                    <div className="stat-box-sub">stored as {selected.stock} {selected.unit}</div>
                   </div>
                   <div className="stat-box">
                     <div className="stat-box-label">7-Day Demand</div>
-                    <div className="stat-box-value" style={{ color: isOrder ? '#B5641B' : '#1A1A18' }}>{demand}</div>
-                    <div className="stat-box-sub">{selected.unit} needed</div>
+                    <div className="stat-box-value" style={{ color: isOrder ? '#B5641B' : '#1A1A18', fontSize: '1.3rem' }}>{demandDisplay}</div>
+                    <div className="stat-box-sub">needed this week</div>
                   </div>
                   <div className="stat-box">
                     <div className="stat-box-label">Order Qty</div>
-                    <div className="stat-box-value" style={{ color: orderQty > 0 ? '#A32D2D' : '#0F6E56' }}>{orderQty}</div>
-                    <div className="stat-box-sub">{selected.unit} to order</div>
+                    <div className="stat-box-value" style={{ color: orderQty > 0 ? '#A32D2D' : '#0F6E56', fontSize: '1.3rem' }}>{orderDisplay}</div>
+                    <div className="stat-box-sub">to order</div>
                   </div>
                 </div>
 
@@ -196,7 +211,7 @@ export default function InventoryPage() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: '#6B6860' }}>
                     <span>0</span>
-                    <span>{demand} {selected.unit} (7-day need)</span>
+                    <span>{demandDisplay} (7-day need)</span>
                   </div>
                 </div>
 
@@ -244,9 +259,11 @@ export default function InventoryPage() {
                   >
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 500, color: '#A32D2D' }}>{item.name}</div>
-                      <div style={{ fontSize: 10, color: '#6B6860', marginTop: 1 }}>Order {orderQty} {item.unit}</div>
+                      <div style={{ fontSize: 10, color: '#6B6860', marginTop: 1 }}>
+                        Order {displayStock(orderQty, item.unit, weightUnit)}
+                      </div>
                     </div>
-                    <span style={{ fontFamily: "'Fraunces',serif", fontSize: '1.2rem', color: '#A32D2D' }}>{orderQty}</span>
+                    <span style={{ fontFamily: "'Fraunces',serif", fontSize: '1.2rem', color: '#A32D2D' }}>{orderQty.toFixed(2)}</span>
                   </div>
                 );
               })
@@ -309,11 +326,14 @@ export default function InventoryPage() {
                     <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #E5E0D6' }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 500 }}>{item.name}</div>
-                        <div style={{ fontSize: 11, color: '#6B6860', marginTop: 2 }}>Stock: {item.stock} → Need: {demand} {item.unit}</div>
+                        <div style={{ fontSize: 11, color: '#6B6860', marginTop: 2 }}>
+                          Stock: {displayStock(item.stock, item.unit, weightUnit)} → Need: {displayStock(demand, item.unit, weightUnit)}
+                        </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontFamily: "'Fraunces',serif", fontSize: '1.4rem', color: '#1A1A18' }}>{orderQty}</div>
-                        <div style={{ fontSize: 10, color: '#6B6860' }}>{item.unit}</div>
+                        <div style={{ fontFamily: "'Fraunces',serif", fontSize: '1.4rem', color: '#1A1A18' }}>
+                          {displayStock(orderQty, item.unit, weightUnit)}
+                        </div>
                       </div>
                     </div>
                   );

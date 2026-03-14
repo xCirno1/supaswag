@@ -4,6 +4,7 @@ import * as inventoryController from '../controllers/inventory.controller';
 import * as aiController from '../controllers/ai.controller';
 import * as clinicalController from '../controllers/clinical.controller';
 import * as foodPlanController from '../controllers/foodplan.controller';
+import * as settingsController from '../controllers/settings.controller';
 
 const router = Router();
 
@@ -44,5 +45,11 @@ router.get('/medications', clinicalController.getMedications);
 router.post('/medications', clinicalController.addMedication);
 router.get('/allergies', clinicalController.getAllergies);
 router.post('/allergies', clinicalController.addAllergy);
+
+// ==========================================
+// SETTINGS API
+// ==========================================
+router.get('/settings', settingsController.getSettings);
+router.patch('/settings', settingsController.updateSettings);
 
 export default router;
