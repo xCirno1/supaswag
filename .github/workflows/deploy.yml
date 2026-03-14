@@ -2,7 +2,7 @@ name: Build and Push NutriCare to GHCR
 
 on:
   push:
-    branches: ["main", "deploy"]
+    branches: ["master", "deploy"]
 
 jobs:
   build-and-push:
