@@ -57,7 +57,7 @@ export const login = (req: Request, res: Response) => {
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     maxAge: SESSION_TTL_MS,
-    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.supacare.xcirno.dev' : undefined,
   });
 
   return res.status(200).json({
