@@ -6,6 +6,7 @@ import * as clinicalController from '../controllers/clinical.controller';
 import * as foodPlanController from '../controllers/foodplan.controller';
 import * as settingsController from '../controllers/settings.controller';
 import * as authController from '../controllers/auth.controller';
+import * as mealNutritionController from '../controllers/meal-nutrition.controller';
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.get('/analysis/patient/:id', aiController.getPatientAnalysis);
 router.get('/analysis/inventory-needs', aiController.getBulkInventoryNeeds);
 router.get('/analysis/meal-plans', aiController.getMealPlans);
 router.get('/analysis/logs', aiController.getAiLogs);
+router.post('/analysis/meal-nutrition', mealNutritionController.getMealNutrition);
 
 // ==========================================
 // AI FOOD PLAN API

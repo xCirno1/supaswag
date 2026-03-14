@@ -199,3 +199,12 @@ export const getAllergies = () =>
 
 export const addAllergy = (name: string) =>
   apiClient.post<{ name: string }>('/allergies', { name }).then(r => r.data);
+
+export const getMealNutritionAnalysis = (payload: {
+  mealName: string;
+  mealType: string;
+  kcal: number;
+  patientConditions: string[];
+  patientAllergies: string[];
+  patientMedications: string[];
+}) => apiClient.post('/analysis/meal-nutrition', payload).then(r => r.data);
