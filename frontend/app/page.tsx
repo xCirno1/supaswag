@@ -1,12 +1,13 @@
 "use client"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getPatients, getInventoryNeeds, getAiLogs, Patient, InventoryNeed } from '@/lib/api';
+import { getPatients, getInventoryNeeds, Patient, InventoryNeed } from '@/lib/api';
+import { useAuth } from '@/lib/authContext';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [inventoryNeeds, setInventoryNeeds] = useState<InventoryNeed[]>([]);
-  const [aiLogs, setAiLogs] = useState<any[]>([]);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -15,17 +16,27 @@ export default function Dashboard() {
       .then(([p, inv]) => { setPatients(p); setInventoryNeeds(inv); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-    getAiLogs().then(setAiLogs).catch(() => { });
   }, []);
 
   const orderCount = inventoryNeeds.filter(i => i.status === 'ORDER NOW').length;
   const criticalPatients = patients.filter(p => (p.priority ?? 0) === 3);
   const highPatients = patients.filter(p => (p.priority ?? 0) === 2);
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const roleLabel = user?.role === 'doctor' ? 'Doctor' : user?.role === 'food' ? 'Food Administrator' : 'Staff';
+  const roleIcon = user?.role === 'doctor' ? '🩺' : user?.role === 'food' ? '🍽️' : '👤';
+  const roleDesc = user?.role === 'doctor'
+    ? 'You have access to patient records, AI dietary analysis, and meal plans.'
+    : user?.role === 'food'
+      ? 'You have access to inventory management, meal planning, and bulk food ordering.'
+      : 'Welcome to SupaCare.';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap');
 
         .topbar { display:flex; align-items:center; gap:12px; padding:14px 24px; border-bottom:1px solid var(--border,#E5E0D6); background:#fff; flex-shrink:0; }
         .topbar-title { font-family:'Fraunces',serif; font-size:18px; font-weight:500; color:#1A1A18; flex:1; }
@@ -56,31 +67,117 @@ export default function Dashboard() {
         .info-card { background:#fff; border:1px solid #E5E0D6; border-radius:12px; padding:14px 16px; }
         .info-card-label { font-size:11px; font-weight:500; color:#6B6860; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:8px; }
 
-        .log-entry { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid #E5E0D6; }
-        .log-entry:last-child { border-bottom:none; }
-        .log-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:4px; }
-        .log-time { font-size:10px; color:#A8A59F; width:52px; flex-shrink:0; font-weight:500; }
-        .log-text { font-size:12px; color:#1A1A18; line-height:1.5; }
-
         .patient-mini { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #E5E0D6; }
         .patient-mini:last-child { border-bottom:none; }
         .pm-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:500; flex-shrink:0; }
         .pm-name { font-size:12px; font-weight:500; flex:1; }
         .pm-room { font-size:10px; color:#A8A59F; }
 
-        .inv-item { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-        .inv-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
-        .inv-info { flex:1; min-width:0; }
-        .inv-name { font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .inv-bar-wrap { margin-top:3px; height:4px; background:#E5E0D6; border-radius:4px; overflow:hidden; }
-        .inv-bar { height:4px; border-radius:4px; }
-        .inv-pct { font-size:10px; color:#6B6860; flex-shrink:0; }
-
         .action-btn { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500; padding:6px 12px; border-radius:8px; border:1px solid #E5E0D6; background:#fff; cursor:pointer; color:#1A1A18; text-decoration:none; }
         .action-btn.primary { background:#2D6A4F; border-color:#2D6A4F; color:white; }
         .action-btn svg { width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 
         .section-title { font-family:'Fraunces',serif; font-size:15px; font-weight:500; color:#1A1A18; margin-bottom:12px; }
+
+        /* Welcome card */
+        .welcome-card {
+          background: linear-gradient(135deg, #1C2B22 0%, #2D4A38 100%);
+          border-radius: 14px;
+          padding: 24px 28px;
+          position: relative;
+          overflow: hidden;
+        }
+        .welcome-card::before {
+          content: '';
+          position: absolute;
+          top: -40px; right: -40px;
+          width: 180px; height: 180px;
+          border-radius: 50%;
+          background: rgba(82,183,136,0.08);
+          pointer-events: none;
+        }
+        .welcome-card::after {
+          content: '';
+          position: absolute;
+          bottom: -60px; left: 20px;
+          width: 140px; height: 140px;
+          border-radius: 50%;
+          background: rgba(82,183,136,0.05);
+          pointer-events: none;
+        }
+        .welcome-greeting {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: rgba(82,183,136,0.7);
+          margin-bottom: 6px;
+        }
+        .welcome-name {
+          font-family: 'Fraunces', serif;
+          font-size: 26px;
+          font-weight: 500;
+          color: #fff;
+          line-height: 1.2;
+          margin-bottom: 6px;
+        }
+        .welcome-name span { color: #52B788; font-style: italic; }
+        .welcome-role-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+        .welcome-role-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 20px;
+          background: rgba(82,183,136,0.15);
+          color: #52B788;
+          border: 1px solid rgba(82,183,136,0.25);
+        }
+        .welcome-desc {
+          font-size: 13px;
+          color: rgba(255,255,255,0.45);
+          line-height: 1.6;
+          max-width: 420px;
+        }
+        .welcome-divider {
+          height: 1px;
+          background: rgba(255,255,255,0.07);
+          margin: 16px 0;
+        }
+        .welcome-stats-row {
+          display: flex;
+          gap: 20px;
+          flex-wrap: wrap;
+        }
+        .welcome-stat {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .welcome-stat-value {
+          font-family: 'Fraunces', serif;
+          font-size: 20px;
+          font-weight: 500;
+          color: #fff;
+          line-height: 1;
+        }
+        .welcome-stat-value.amber { color: #EF9F27; }
+        .welcome-stat-value.red   { color: #E24B4A; }
+        .welcome-stat-value.green { color: #52B788; }
+        .welcome-stat-label {
+          font-size: 10px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.35);
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+        }
 
         @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         .fade-up { animation:fadeUp 0.35s ease forwards; }
@@ -95,63 +192,50 @@ export default function Dashboard() {
 
       <div className="content-area">
 
-        {/* LEFT: Stats */}
-        <div className="left-panel">
-          <div className="list-header">
-            <span className="list-header-label">Dashboard</span>
-          </div>
-
-          <div className="stat-row">
-            <div className="stat-label">Total Patients</div>
-            <div className="stat-value">{loading ? '—' : patients.length}</div>
-            <div className="stat-sub">Active records</div>
-          </div>
-
-          <div className="stat-row">
-            <div className="stat-label">Items to Order</div>
-            <div className={`stat-value ${orderCount > 0 ? 'amber' : ''}`}>{loading ? '—' : orderCount}</div>
-            <div className="stat-sub">Below threshold</div>
-          </div>
-
-          <div className="stat-row">
-            <div className="stat-label">Critical Patients</div>
-            <div className={`stat-value ${criticalPatients.length > 0 ? 'red' : ''}`}>{loading ? '—' : criticalPatients.length}</div>
-            <div className="stat-sub">Require attention</div>
-          </div>
-
-          <div className="stat-row">
-            <div className="stat-label">High Priority</div>
-            <div className={`stat-value ${highPatients.length > 0 ? 'amber' : ''}`}>{loading ? '—' : highPatients.length}</div>
-            <div className="stat-sub">Being monitored</div>
-          </div>
-
-          <div style={{ padding: '16px', borderTop: '1px solid #E5E0D6', marginTop: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#52B788', fontWeight: 500 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#52B788', animation: 'pulse 2s infinite', display: 'inline-block' }} />
-              AI Active · EHR monitoring
-            </div>
-          </div>
-        </div>
-
-        {/* CENTER: Activity log + quick links */}
+        {/* CENTER: Welcome + quick links */}
         <div className="center-pane">
-          <div>
-            <div className="section-title">AI System Activity</div>
-            <div className="info-card">
-              {loading ? (
-                <p style={{ fontSize: 13, color: '#A8A59F' }}>Loading logs…</p>
-              ) : aiLogs.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#A8A59F' }}>No recent activity.</p>
-              ) : (
-                aiLogs.slice(0, 8).map((log, i) => (
-                  <div key={i} className="log-entry fade-up" style={{ animationDelay: `${i * 0.05}s`, opacity: 0 }}>
-                    <span className="log-time">{log.time || new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    <span className="log-dot" style={{ background: log.severity === 'warn' ? '#E24B4A' : log.severity === 'ok' ? '#52B788' : '#EF9F27' }} />
-                    <span className="log-text">{log.text}</span>
-                  </div>
-                ))
-              )}
+
+          {/* Welcome card */}
+          <div className="welcome-card fade-up">
+            <div className="welcome-greeting">{greeting}</div>
+            <div className="welcome-name">
+              Welcome back, <span>{user?.name ?? 'Staff'}</span>
             </div>
+            <div className="welcome-role-row">
+              <span className="welcome-role-badge">
+                <span>{roleIcon}</span>
+                {roleLabel}
+              </span>
+            </div>
+            <div className="welcome-desc">{roleDesc}</div>
+
+            {!loading && (
+              <>
+                <div className="welcome-divider" />
+                <div className="welcome-stats-row">
+                  <div className="welcome-stat">
+                    <div className="welcome-stat-value">{patients.length}</div>
+                    <div className="welcome-stat-label">Patients</div>
+                  </div>
+                  <div className="welcome-stat">
+                    <div className={`welcome-stat-value ${criticalPatients.length > 0 ? 'red' : 'green'}`}>
+                      {criticalPatients.length}
+                    </div>
+                    <div className="welcome-stat-label">Critical</div>
+                  </div>
+                  <div className="welcome-stat">
+                    <div className={`welcome-stat-value ${orderCount > 0 ? 'amber' : 'green'}`}>
+                      {orderCount}
+                    </div>
+                    <div className="welcome-stat-label">Restock Alerts</div>
+                  </div>
+                  <div className="welcome-stat">
+                    <div className="welcome-stat-value green">{inventoryNeeds.length}</div>
+                    <div className="welcome-stat-label">Inventory Items</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Quick nav cards */}
