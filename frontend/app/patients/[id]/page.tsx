@@ -114,7 +114,6 @@ export default function PatientDetail({ params }: { params: Promise<{ id: string
         .info-card:hover { box-shadow:0 4px 20px rgba(28,25,23,0.07); transform:translateY(-1px); }
         .info-card-title { font-family:'Fraunces',serif; font-size:15px; color:#1A1A18; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
 
-        /* FIX: word-break ensures long AI summaries wrap instead of pushing layout */
         .ai-summary-text { font-size:15px; font-family:'Fraunces',serif; font-style:italic; color:#1A1A18; line-height:1.6; word-break:break-word; overflow-wrap:anywhere; }
 
         .safe-chip { display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#0F6E56; border:1px solid rgba(15,110,86,0.2); background:rgba(15,110,86,0.05); padding:5px 12px; border-radius:20px; font-weight:500; transition:background 0.15s,transform 0.15s; }
@@ -227,7 +226,7 @@ export default function PatientDetail({ params }: { params: Promise<{ id: string
               background: 'linear-gradient(135deg,#fdf8f0,#faf4e8)',
               border: '1px solid rgba(181,100,27,0.15)',
               borderRadius: 12, padding: '18px 20px',
-              position: 'relative', overflow: 'hidden',
+              position: 'relative',
               // FIX: explicit width:100% + box-sizing so the card never exceeds the pane
               width: '100%', boxSizing: 'border-box',
             }}>

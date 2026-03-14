@@ -72,6 +72,25 @@ export interface AiLog {
   text: string;
 }
 
+// ── Food Plan types ──────────────────────────────────────────────────────────
+export interface SuggestedItem {
+  id: string;
+  name: string;
+  category: string;
+  reason: string;
+  estimatedPrice: string;
+  distributorName: string;
+  distributorUrl: string;
+  weeklyQty: string;
+  tags: string[];
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+export interface WeekPlanDay {
+  day: string;
+  meals: { time: string; description: string }[];
+}
+
 // PATIENTS
 export const getPatients = () =>
   apiClient.get<Patient[]>('/patients').then((res) => res.data);
@@ -96,7 +115,15 @@ export const updateInventoryStock = (id: string, stock: number) =>
   apiClient.patch<InventoryItem>(`/inventory/${id}`, { stock }).then((res) => res.data);
 
 export const createInventoryItem = (data: Partial<InventoryItem>) =>
-  apiClient.post<InventoryItem>('/inventory', data).then((res) => res.data); // TODO: Waiting for backend
+  apiClient.post<InventoryItem>('/inventory', data).then((res) => res.data);
+
+export const createInventoryItemsBatch = async (items: Partial<InventoryItem>[]): Promise<InventoryItem[]> => {
+  const results: InventoryItem[] = [];
+  for (const item of items) {
+    results.push(await createInventoryItem(item));
+  }
+  return results;
+};
 
 // AI ENGINE
 export const getPatientAnalysis = (id: string) =>
@@ -110,6 +137,20 @@ export const getMealPlans = () =>
 
 export const getAiLogs = () =>
   apiClient.get<AiLog[]>('/analysis/logs').then((res) => res.data);
+
+// AI FOOD PLAN
+export const getFoodPlanSuggestions = (payload: {
+  rejectedNames: string[];
+  approvedNames: string[];
+  inventoryNames: string[];
+  preference?: string;
+}): Promise<{ items: Omit<SuggestedItem, 'id' | 'status'>[] }> =>
+  apiClient.post('/food-plan/suggestions', payload).then((res) => res.data);
+
+export const getFoodPlanWeekPlan = (payload: {
+  approvedItems: Pick<SuggestedItem, 'name' | 'weeklyQty'>[];
+}): Promise<{ days: WeekPlanDay[] }> =>
+  apiClient.post('/food-plan/week-plan', payload).then((res) => res.data);
 
 // CLINICAL OPTIONS
 export const getMedications = () =>

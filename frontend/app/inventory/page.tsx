@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { getInventoryNeeds, updateInventoryStock, InventoryNeed } from '@/lib/api';
 import { Check, X } from 'lucide-react';
+import BulkPlanButton from './BulkPlanButton';
 
 export default function InventoryPage() {
   const [inventoryData, setInventoryData] = useState<InventoryNeed[]>([]);
@@ -12,12 +13,13 @@ export default function InventoryPage() {
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  const loadInventory = () =>
     getInventoryNeeds()
-      .then(data => { setInventoryData(data); if (data.length > 0) setSelected(data[0]); })
+      .then(data => { setInventoryData(data); if (data.length > 0) setSelected(prev => prev ? (data.find(d => d.id === prev.id) ?? data[0]) : data[0]); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, []);
+
+  useEffect(() => { loadInventory(); }, []);
 
   const itemsToOrder = inventoryData.filter(i => i.status === 'ORDER NOW');
 
@@ -82,7 +84,6 @@ export default function InventoryPage() {
         .order-btn { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:500; padding:8px 16px; border-radius:8px; background:#1C2B22; color:#52B788; border:none; cursor:pointer; transition:background 0.15s; }
         .order-btn:hover { background:#2D6A4F; }
 
-        /* Dialog */
         .dialog-overlay { position:fixed; inset:0; background:rgba(28,25,23,0.45); backdrop-filter:blur(4px); z-index:50; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease; }
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         .dialog-panel { background:#F9F6F1; border:1px solid #E5E0D6; border-radius:14px; width:100%; max-width:520px; max-height:85vh; overflow-y:auto; margin:1rem; animation:scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1); }
@@ -127,7 +128,7 @@ export default function InventoryPage() {
                   <div className="inv-card-left" style={{ background: isOrder ? '#E24B4A' : '#52B788' }} />
                   <div className="inv-card-name">{item.name}</div>
                   <div className="inv-card-row">
-                    <span style={{ fontSize: 11, color: '#6B6860', tabularNums: true } as any}>{item.stock} {item.unit}</span>
+                    <span style={{ fontSize: 11, color: '#6B6860' }}>{item.stock} {item.unit}</span>
                     <div className="stock-bar-wrap">
                       <div className="stock-bar" style={{ width: `${pct}%`, background: barColor }} />
                     </div>
@@ -185,7 +186,6 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                {/* Stock bar */}
                 <div className="info-card">
                   <div className="info-card-label">Stock vs Demand</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -200,7 +200,6 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                {/* AI insight */}
                 <div className="info-card" style={{ background: isOrder ? '#FAEEDA' : '#F9F6F1', borderColor: isOrder ? '#F5C4B3' : '#E5E0D6' }}>
                   <div className="info-card-label">AI Insight</div>
                   <p style={{ fontSize: 13, color: isOrder ? '#7A3E0D' : '#6B6860', lineHeight: 1.6, fontWeight: isOrder ? 500 : 400 }}>
@@ -213,7 +212,6 @@ export default function InventoryPage() {
                   )}
                 </div>
 
-                {/* Tags */}
                 {selected.tags.length > 0 && (
                   <div className="info-card">
                     <div className="info-card-label">Dietary Tags</div>
@@ -273,6 +271,9 @@ export default function InventoryPage() {
               );
             })}
           </div>
+
+          {/* Spacer so sticky button doesn't cover last item */}
+          <div style={{ height: 72 }} />
         </div>
       </div>
 
@@ -301,7 +302,6 @@ export default function InventoryPage() {
                 <p style={{ fontSize: 12, color: '#6B6860', marginBottom: 16 }}>
                   {itemsToOrder.length} item{itemsToOrder.length !== 1 ? 's' : ''} flagged for reorder based on 7-day patient demand.
                 </p>
-
                 {itemsToOrder.map(item => {
                   const demand = Math.round(item.requested * 7);
                   const orderQty = Math.max(0, demand - item.stock);
@@ -318,7 +318,6 @@ export default function InventoryPage() {
                     </div>
                   );
                 })}
-
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
                   <button onClick={() => setShowDialog(false)} style={{ background: 'transparent', border: '1px solid #E5E0D6', color: '#6B6860', padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
                     Cancel
@@ -336,6 +335,11 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      <BulkPlanButton
+        inventory={inventoryData}
+        onInventoryAdded={loadInventory}
+      />
     </div>
   );
 }
