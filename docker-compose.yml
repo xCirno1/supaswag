@@ -6,6 +6,8 @@ services:
     ports:
       - "5000:5000"
     restart: unless-stopped
+    networks:
+      - supacare_default
 
   frontend:
     image: ghcr.io/xcirno1/supacare-frontend:latest
@@ -14,4 +16,9 @@ services:
     ports:
       - "3001:3000"
     restart: unless-stopped
+    networks:
+      - supacare_default
 
+networks:
+  supacare_default:
+    external: true
